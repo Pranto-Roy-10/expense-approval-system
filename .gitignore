@@ -21,3 +21,6 @@ htmlcov/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local editor/agent tooling
+.claude/
