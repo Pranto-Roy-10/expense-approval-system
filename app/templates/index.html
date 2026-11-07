@@ -18,7 +18,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
 </head>
 <body>
@@ -27,7 +27,7 @@
   <header class="site-header">
     <div class="container nav">
       <a class="brand" href="{{ url_for('main.index') }}" aria-label="Claimora home">
-        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="9"/><path d="M20.5 11.5a6.5 6.5 0 1 0 0 9"/><circle cx="22.5" cy="16" r="1.6"/></svg>
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7"/><path d="M20.5 11.5a6.5 6.5 0 1 0 0 9"/><circle cx="22.5" cy="16" r="1.6"/></svg>
         Claimora
       </a>
       <nav aria-label="Primary">
@@ -49,15 +49,10 @@
   <main id="main">
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-bg" aria-hidden="true">
-        <div class="glow glow-a"></div>
-        <div class="glow glow-b"></div>
-        <div class="grid-lines"></div>
-      </div>
       <div class="container hero-grid">
         <div class="hero-copy">
-          <p class="pill" data-hero><span class="pill-dot"></span>Expense management for growing teams</p>
-          <h1 data-hero-title>Expense claims, approved and paid <em>without the chase.</em></h1>
+          <p class="eyebrow eyebrow-rule" data-hero>Expense management for growing teams</p>
+          <h1 data-hero-title>Expense claims, approved and paid <span class="mark">without the chase.</span></h1>
           <p class="lead" data-hero>Employees submit itemised claims in minutes. Managers and Finance review them in one queue. Every decision is recorded, so nothing gets lost between inbox and payout.</p>
           <div class="hero-actions" data-hero>
             <a class="btn btn-primary" href="#roles">Get started
@@ -66,9 +61,9 @@
             <a class="btn btn-ghost" href="#workflow">See how it works</a>
           </div>
           <ul class="hero-points">
-            <li data-hero-point><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Two-level approval for high-value claims</li>
-            <li data-hero-point><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Policy checks enforced on every submission</li>
-            <li data-hero-point><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Full audit history on each claim</li>
+            <li data-hero-point><svg viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Two-level approval for high-value claims</li>
+            <li data-hero-point><svg viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Policy checks enforced on every submission</li>
+            <li data-hero-point><svg viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5"/></svg>Full audit history on each claim</li>
           </ul>
         </div>
 
@@ -77,19 +72,19 @@
             <div class="claim-head">
               <div>
                 <p class="claim-id">CLM-2048</p>
-                <p class="claim-title">Client workshop, Zürich</p>
+                <p class="claim-title">Client workshop, Chattogram</p>
               </div>
               <span class="badge badge-submitted">In review</span>
             </div>
             <table class="claim-items">
               <caption class="sr-only">Line items</caption>
-              <thead><tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col" class="num">Amount</th></tr></thead>
+              <thead><tr><th scope="col">Item</th><th scope="col">Category</th><th scope="col" class="num">Amount (৳)</th></tr></thead>
               <tbody>
-                <tr data-claim-row><td>Return flight</td><td><span class="cat">Travel</span></td><td class="num">780.00</td></tr>
-                <tr data-claim-row><td>Hotel, 2 nights</td><td><span class="cat">Travel</span></td><td class="num">312.40</td></tr>
-                <tr data-claim-row><td>Team dinner<span class="note">Note attached</span></td><td><span class="cat">Meals</span></td><td class="num">96.50</td></tr>
+                <tr data-claim-row><td>Return flight</td><td><span class="cat">Travel</span></td><td class="num">7,800.00</td></tr>
+                <tr data-claim-row><td>Hotel, 2 nights</td><td><span class="cat">Travel</span></td><td class="num">12,400.00</td></tr>
+                <tr data-claim-row><td>Team dinner<span class="note">Note attached</span></td><td><span class="cat">Meals</span></td><td class="num">3,450.00</td></tr>
               </tbody>
-              <tfoot><tr><th scope="row" colspan="2">Total (USD)</th><td class="num" data-count="1188.90">1,188.90</td></tr></tfoot>
+              <tfoot><tr><th scope="row" colspan="2">Total</th><td class="num">৳&nbsp;<span data-count="23650">23,650.00</span></td></tr></tfoot>
             </table>
             <div class="steps" aria-label="Approval progress: manager approved, awaiting finance">
               <div class="steps-track" aria-hidden="true"><span class="steps-fill" data-steps-fill></span></div>
@@ -107,7 +102,7 @@
           </div>
           <div class="float-card float-rule" aria-hidden="true" data-float>
             <span class="float-icon warn"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></span>
-            <div><strong>Over 1,000</strong><span>Finance sign-off required</span></div>
+            <div><strong>Over ৳1,000</strong><span>Finance sign-off required</span></div>
           </div>
         </div>
       </div>
@@ -140,7 +135,7 @@
     <section id="workflow" class="section">
       <div class="container">
         <header class="section-head" data-reveal>
-          <p class="eyebrow">Claim lifecycle</p>
+          <p class="eyebrow eyebrow-rule">Claim lifecycle</p>
           <h2>One clear path from receipt to reimbursement</h2>
           <p>Every claim moves through the same statuses, so everyone knows exactly where it stands.</p>
         </header>
@@ -184,7 +179,7 @@
     <section id="roles" class="section section-alt">
       <div class="container">
         <header class="section-head" data-reveal>
-          <p class="eyebrow">Built for every role</p>
+          <p class="eyebrow eyebrow-rule">Built for every role</p>
           <h2>Each person sees the work that matters to them</h2>
         </header>
         <div class="roles" data-stagger>
@@ -198,7 +193,7 @@
               <li>See every claim with status, total and date</li>
             </ul>
           </article>
-          <article class="role-card role-card-featured">
+          <article class="role-card">
             <div class="role-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg></div>
             <h3>Manager</h3>
             <p>See pending claims at a glance and decide in one step.</p>
@@ -226,7 +221,7 @@
     <section id="policy" class="section">
       <div class="container">
         <header class="section-head" data-reveal>
-          <p class="eyebrow">Policy enforcement</p>
+          <p class="eyebrow eyebrow-rule">Policy enforcement</p>
           <h2>Rules checked on the server, not just the form</h2>
           <p>Expense policy is applied on every request, so it holds no matter how a claim is submitted.</p>
         </header>
@@ -253,7 +248,7 @@
     <section id="audit" class="section section-alt">
       <div class="container audit-grid">
         <div data-reveal>
-          <p class="eyebrow">Audit trail</p>
+          <p class="eyebrow eyebrow-rule">Audit trail</p>
           <h2>A timeline you can stand behind</h2>
           <p class="lead">Every claim carries its own history. When someone asks why a payment went out, the answer is already on the record.</p>
         </div>
@@ -270,8 +265,10 @@
     <section class="cta">
       <div class="container">
         <div class="cta-inner" data-cta>
-          <h2>Ready to clear the expense backlog?</h2>
-          <p>Choose your role and start working through claims today.</p>
+          <div>
+            <h2>Ready to clear the expense backlog?</h2>
+            <p>Choose your role and start working through claims today.</p>
+          </div>
           <a class="btn btn-primary" href="#roles">Get started
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </a>
@@ -281,9 +278,9 @@
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-inner">
+    <div class="container footer-inner" data-footer>
       <a class="brand brand-sm" href="{{ url_for('main.index') }}">
-        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="9"/><path d="M20.5 11.5a6.5 6.5 0 1 0 0 9"/><circle cx="22.5" cy="16" r="1.6"/></svg>
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7"/><path d="M20.5 11.5a6.5 6.5 0 1 0 0 9"/><circle cx="22.5" cy="16" r="1.6"/></svg>
         Claimora
       </a>
       <ul>
