@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, progress, history, csrf with context %}
+{% block title %}{{ claim.code }} · {{ claim.title }} · Claimora{% endblock %}
+
+{% block content %}
+{% set mine = claim.owner_id == g.user.id %}
+<section class="section section-tight">
+  <div class="container">
+    <a class="back-link" href="{{ url_for('main.workspace') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Back to workspace
+    </a>
+    <header class="page-head" data-intro>
+      <div>
+        <p class="eyebrow">{{ claim.code }}</p>
+        <h1>{{ claim.title }}</h1>
+        <p class="lead claim-meta">
+          {{ badge(claim) }}
+          <span>{{ "Your claim" if mine else claim.owner.name }}</span>
+          <span>Updated {{ claim.updated_at.strftime("%d %b %Y") }}</span>
+        </p>
+      </div>
+      {% if mine and claim.editable %}
+      <div class="head-actions">
+        {% if claim.status == "draft" %}
+        <form method="post" action="{{ url_for('claims.delete', claim_id=claim.id) }}" data-confirm="Delete {{ claim.code }}? This can't be undone.">
+          {{ csrf() }}<button class="btn btn-ghost" type="submit">Delete</button>
+        </form>
+        {% endif %}
+        <a class="btn btn-ghost" href="{{ url_for('claims.edit', claim_id=claim.id) }}">Edit</a>
+        <form method="post" action="{{ url_for('claims.submit', claim_id=claim.id) }}">
+          {{ csrf() }}<button class="btn btn-primary" type="submit">{{ "Resubmit" if claim.status == "rejected" else "Submit" }}</button>
+        </form>
+      </div>
+      {% endif %}
+    </header>
+
+    {% if claim.status == "rejected" %}
+    {% set rejection = claim.audit|selectattr("to_status", "eq", "rejected")|first %}
+    <div class="callout callout-rejected" data-cards>
+      <span class="badge badge-rejected">Rejected</span>
+      <p><strong>{{ rejection.actor.name }}:</strong> {{ rejection.comment }}{% if mine %} Edit the claim and resubmit it.{% endif %}</p>
+    </div>
+    {% endif %}
+
+    <div class="workspace-grid">
+      <section class="panel" aria-labelledby="items-title" data-cards>
+        <div class="panel-head">
+          <h2 id="items-title" class="h3">Line items</h2>
+          <span class="count">{{ claim.items|length }}</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table items-table">
+            <thead>
+              <tr><th scope="col">Date</th><th scope="col">Item</th><th scope="col">Receipt</th><th scope="col" class="num">Amount</th></tr>
+            </thead>
+            <tbody>
+              {% for item in claim.items %}
+              <tr>
+                <td class="nowrap">{{ item.date.strftime("%d %b %Y") }}</td>
+                <td>
+                  <span class="cat">{{ item.category }}</span>
+                  <strong class="item-desc">{{ item.description }}</strong>
+                  {% if item.note %}<span class="note">{{ item.note }}</span>{% endif %}
+                </td>
+                <td>
+                  {% if item.receipt_file %}
+                  <button class="receipt-btn" type="button" data-receipt
+                          data-src="{{ url_for('claims.receipt', item_id=item.id) }}"
+                          data-kind="{{ 'pdf' if item.receipt_is_pdf else 'image' }}"
+                          data-name="{{ item.receipt_name }}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+                    View<span class="sr-only"> receipt {{ item.receipt_name }}</span>
+                  </button>
+                  {% else %}
+                  <span class="muted">None</span>
+                  {% endif %}
+                </td>
+                <td class="num">
+                  {% if item.currency == "BDT" %}৳&nbsp;{{ item.amount|taka }}
+                  {% else %}{{ item.currency }}&nbsp;{{ item.amount|taka }}<span class="cell-sub">৳&nbsp;{{ item.base_amount|taka }}</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Total</th><td class="num">৳&nbsp;{{ claim.total|taka }}</td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+
+      <div class="stack">
+        {% if can_review %}
+        <section class="panel review-panel" id="review" aria-labelledby="review-title" data-cards>
+          <div class="panel-head"><h2 id="review-title" class="h3">{{ "Finance approval" if claim.awaiting_finance else "Your review" }}</h2></div>
+          <form class="panel-body" method="post">
+            {{ csrf() }}
+            <div class="field">
+              <label for="comment">Comment</label>
+              <textarea id="comment" name="comment" rows="3" maxlength="1000" placeholder="Required when rejecting"></textarea>
+              {% if not claim.awaiting_finance and claim.total > 1000 %}<p class="field-hint">Over ৳1,000: approving sends it to Finance.</p>{% endif %}
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-ghost" type="submit" formaction="{{ url_for('claims.reject', claim_id=claim.id) }}" data-needs-comment>Reject</button>
+              <button class="btn btn-primary" type="submit" formaction="{{ url_for('claims.approve', claim_id=claim.id) }}">Approve</button>
+            </div>
+          </form>
+        </section>
+        {% endif %}
+
+        {% if g.user.role == "finance" and claim.status == "approved" %}
+        <section class="panel" aria-labelledby="pay-title" data-cards>
+          <div class="panel-head"><h2 id="pay-title" class="h3">Payment</h2></div>
+          <form class="panel-body" method="post" action="{{ url_for('claims.pay', claim_id=claim.id) }}">
+            {{ csrf() }}
+            <p class="muted">Approved and ready to pay ৳&nbsp;{{ claim.total|taka }} to {{ claim.owner.name }}.</p>
+            <button class="btn btn-primary btn-block" type="submit">Mark as paid</button>
+          </form>
+        </section>
+        {% endif %}
+
+        <aside class="panel" aria-labelledby="history-title" data-cards>
+          <div class="panel-head"><h2 id="history-title" class="h3">History</h2></div>
+          <div class="panel-body">
+            {% if claim.status not in ("draft", "rejected") %}{{ progress(claim) }}<h3 class="panel-sub">Audit trail</h3>{% endif %}
+            {{ history(claim.audit) }}
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<dialog class="viewer" aria-labelledby="viewer-title" data-viewer>
+  <div class="viewer-head">
+    <p id="viewer-title" class="viewer-title" data-viewer-name>Receipt</p>
+    <a class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener" data-viewer-open>Open in new tab</a>
+    <button class="icon-btn" type="button" aria-label="Close receipt" data-viewer-close>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="viewer-body" data-viewer-body></div>
+</dialog>
+{% endblock %}
