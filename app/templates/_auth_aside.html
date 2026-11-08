@@ -1,0 +1,40 @@
+{# Decorative side panel for the sign-in and sign-up pages: a claim moving through approval on a loop. #}
+<aside class="auth-aside" aria-hidden="true" data-auth-aside>
+  <div class="auth-aside-inner">
+    <p class="eyebrow">From receipt to payout</p>
+    <p class="auth-aside-title">Every claim, every step, <strong>on the record</strong></p>
+
+    <div class="auth-stage">
+      <figure class="claim-card auth-card">
+        <div class="claim-head">
+          <div>
+            <p class="claim-id">CLM-0142</p>
+            <p class="claim-title">Team offsite, Sylhet</p>
+          </div>
+          <span class="badge badge-submitted" data-auth-badge>In review</span>
+        </div>
+        <table class="claim-items">
+          <tbody>
+            <tr data-auth-row><td>Bus tickets</td><td><span class="cat">Travel</span></td><td class="num">4,200.00</td></tr>
+            <tr data-auth-row><td>Resort, 1 night</td><td><span class="cat">Travel</span></td><td class="num">11,500.00</td></tr>
+            <tr data-auth-row><td>Lunch<span class="note">Note attached</span></td><td><span class="cat">Meals</span></td><td class="num">3,240.00</td></tr>
+          </tbody>
+          <tfoot><tr><th scope="row" colspan="2">Total</th><td class="num">৳&nbsp;18,940.00</td></tr></tfoot>
+        </table>
+        <div class="steps">
+          <div class="steps-track"><span class="steps-fill" data-auth-fill></span></div>
+          <ol>
+            <li data-auth-step><span class="step-dot"></span>Manager</li>
+            <li data-auth-step><span class="step-dot"></span>Finance</li>
+            <li data-auth-step><span class="step-dot"></span>Paid</li>
+          </ol>
+        </div>
+      </figure>
+
+      <div class="float-card auth-toast" data-auth-toast>
+        <span class="float-icon ok"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <div><strong data-auth-toast-title>Approved by manager</strong><span data-auth-toast-sub>Sent to Finance</span></div>
+      </div>
+    </div>
+  </div>
+</aside>
