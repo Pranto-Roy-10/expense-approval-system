@@ -2,4 +2,5 @@ Flask==3.1.*
 Flask-SQLAlchemy==3.1.*
 python-dotenv==1.*
 pytest==8.*
+pytest-cov==7.*
 XlsxWriter==3.2.*
