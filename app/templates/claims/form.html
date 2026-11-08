@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf with context %}
+{% set editing = claim.id is not none %}
+{% block title %}{{ "Edit " ~ claim.code if editing else "New claim" }} · Claimora{% endblock %}
+
+{% macro line(row, n) %}
+<fieldset class="expense" data-line>
+  <legend class="expense-head">
+    <span class="expense-no" data-line-number>{{ n }}</span>
+    <span class="sr-only">Expense</span>
+  </legend>
+  <button class="expense-remove" type="button" data-remove-line>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Remove
+  </button>
+  <input type="hidden" name="items-{{ row.key }}-id" value="{{ row.id }}">
+  <div class="expense-grid">
+    <div class="field f-date">
+      <label for="d-{{ row.key }}">Date</label>
+      <input id="d-{{ row.key }}" type="date" name="items-{{ row.key }}-date" value="{{ row.date }}" required>
+    </div>
+    <div class="field f-cat">
+      <label for="c-{{ row.key }}">Category</label>
+      <select id="c-{{ row.key }}" name="items-{{ row.key }}-category" required data-category>
+        <option value="">Choose a category</option>
+        {% for c in categories %}<option {% if row.category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field f-amount">
+      <label for="a-{{ row.key }}">Amount</label>
+      <div class="amount-input">
+        <input id="a-{{ row.key }}" name="items-{{ row.key }}-amount" value="{{ row.amount }}" inputmode="decimal" required placeholder="0.00" data-amount>
+        <select name="items-{{ row.key }}-currency" aria-label="Currency" data-currency>
+          {% for code in currencies %}<option {% if row.currency == code %}selected{% endif %}>{{ code }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="field f-desc">
+      <label for="s-{{ row.key }}">Description</label>
+      <input id="s-{{ row.key }}" name="items-{{ row.key }}-description" value="{{ row.description }}" maxlength="240" required placeholder="e.g. Return flight, Dhaka to Chattogram">
+    </div>
+    <div class="field f-note">
+      <label for="n-{{ row.key }}">Note <span class="optional" data-note-flag>Optional</span></label>
+      <input id="n-{{ row.key }}" name="items-{{ row.key }}-note" value="{{ row.note }}" maxlength="500" placeholder="Who attended and why, for meals" data-note>
+    </div>
+    <div class="field f-receipt">
+      <span class="label">Receipt</span>
+      {% if row.receipt_name %}
+      <input type="hidden" name="items-{{ row.key }}-receipt_name" value="{{ row.receipt_name }}">
+      <div class="receipt-current" data-receipt-current>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+        <span>{{ row.receipt_name }}</span>
+        <label class="check"><input type="checkbox" name="items-{{ row.key }}-remove_receipt" value="1" data-remove-receipt> Remove</label>
+      </div>
+      {% endif %}
+      <label class="file-drop">
+        <input type="file" name="items-{{ row.key }}-receipt" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" data-file>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <span data-file-label>{{ "Replace file" if row.receipt_name else "Upload receipt" }}</span>
+        <small>PDF or image, 5 MB max</small>
+      </label>
+    </div>
+  </div>
+</fieldset>
+{% endmacro %}
+
+{% block content %}
+<section class="section section-tight">
+  <div class="container">
+    <a class="back-link" href="{{ url_for('claims.detail', claim_id=claim.id) if editing else url_for('main.workspace') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>{{ claim.code if editing else "My claims" }}
+    </a>
+    <header class="ws-head" data-intro>
+      <div>
+        <h1>{% if editing %}Edit <strong>{{ claim.code }}</strong>{% else %}New <strong>claim</strong>{% endif %}</h1>
+        <p class="ws-sub">Add one line per expense, each with its receipt. Save a draft at any time, or submit it for approval.</p>
+      </div>
+    </header>
+
+    {% if error %}<div class="flash flash-error form-error" role="alert" tabindex="-1" data-form-error><strong>This claim wasn't saved.</strong> {{ error }}</div>{% endif %}
+    {% if editing and claim.status == "rejected" and claim.audit %}
+    <div class="returned-note">
+      <span class="badge badge-rejected">Returned</span>
+      <p><strong>{{ claim.audit[0].actor.name }}:</strong> {{ claim.audit[0].comment or "Returned for changes." }}</p>
+    </div>
+    {% endif %}
+
+    <form class="claim-layout" method="post" enctype="multipart/form-data" novalidate data-claim-form
+          data-rates='{{ currencies|tojson }}'>
+      {{ csrf() }}
+      <div class="claim-main">
+        <section class="panel" aria-labelledby="details-title" data-cards>
+          <div class="panel-head"><h2 id="details-title" class="h3">Claim details</h2></div>
+          <div class="panel-body">
+            <div class="field">
+              <label for="title">Title</label>
+              <input id="title" name="title" value="{{ title }}" maxlength="160" required placeholder="e.g. Client workshop, Chattogram">
+              <p class="field-hint">A short name your approvers will recognise.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="lines-title" data-cards>
+          <div class="panel-head">
+            <h2 id="lines-title" class="h3">Expenses</h2>
+            <span class="count"><span data-sum-items>{{ rows|length }}</span> line<span data-items-plural>{{ "s" if rows|length != 1 }}</span></span>
+          </div>
+          <div class="expenses" data-lines>
+            {% for row in rows %}{{ line(row, loop.index) }}{% endfor %}
+          </div>
+          <template data-line-template>{{ line({"key": "__KEY__", "id": "", "date": "", "category": "", "description": "", "amount": "", "currency": "BDT", "note": "", "receipt_name": ""}, 0) }}</template>
+          <div class="expenses-foot">
+            <button class="btn btn-ghost btn-sm" type="button" data-add-line>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add expense
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <aside class="claim-side">
+        <section class="panel summary" aria-labelledby="summary-title" data-cards>
+          <div class="panel-head"><h2 id="summary-title" class="h3">Summary</h2></div>
+          <div class="summary-total">
+            <span>Claim total</span>
+            <strong>৳&nbsp;<span data-total>0.00</span></strong>
+            <small>USD at ৳{{ currencies.USD }} · EUR at ৳{{ currencies.EUR }}</small>
+          </div>
+          <dl class="summary-rows">
+            <div><dt>Receipts</dt><dd><span data-sum-receipts>0</span> of <span data-sum-lines>0</span> attached</dd></div>
+            <div><dt>Reviewed by</dt><dd>{{ g.user.manager.name if g.user.manager else "Your manager" }}</dd></div>
+            <div><dt>Finance sign-off</dt><dd data-finance>Not needed</dd></div>
+          </dl>
+          <ul class="checklist" aria-label="Before you submit">
+            <li data-check="title">Title added</li>
+            <li data-check="lines">Every line has a date, category, amount and description</li>
+            <li data-check="receipts">Every line has a receipt</li>
+            <li data-check="notes">Meals over ৳50 have a note</li>
+          </ul>
+          <div class="summary-actions">
+            <button class="btn btn-primary btn-block" type="submit" name="action" value="submit" data-busy="Submitting…">Submit for approval</button>
+            <button class="btn btn-ghost btn-block" type="submit" name="action" value="draft" data-busy="Saving…">Save as draft</button>
+          </div>
+        </section>
+      </aside>
+    </form>
+  </div>
+</section>
+{% endblock %}
