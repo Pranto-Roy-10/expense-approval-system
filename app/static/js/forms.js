@@ -37,7 +37,7 @@
     var set = function (sel, text) { var el = form.querySelector(sel); if (el) el.textContent = text; };
     var check = function (key, ok) { var el = form.querySelector('[data-check="' + key + '"]'); if (el) el.classList.toggle("is-ok", ok); };
     var refresh = function () {
-      var total = 0, receipts = 0, complete = true, notesOk = true;
+      var total = 0, receipts = 0, complete = true, notesOk = true, mealsNeedingNote = 0;
       var all = lines.querySelectorAll("[data-line]");
       all.forEach(function (line, i) {
         line.querySelector("[data-line-number]").textContent = i + 1;
@@ -49,6 +49,7 @@
         flag.classList.toggle("is-required", needsNote);
         var note = line.querySelector("[data-note]");
         note.required = needsNote;
+        if (needsNote) mealsNeedingNote++;
         if (needsNote && !note.value.trim()) notesOk = false;
         // a receipt counts if one is kept on file or a new file is chosen
         var kept = line.querySelector("[data-receipt-current]") && !line.querySelector("[data-remove-receipt]").checked;
@@ -67,7 +68,10 @@
       check("title", !!form.querySelector("#title").value.trim());
       check("lines", complete);
       check("receipts", receipts === all.length);
-      check("notes", notesOk);
+      // only a pass when there is something to pass; with no meals over ৳50 the rule simply doesn't apply
+      check("notes", mealsNeedingNote > 0 && notesOk);
+      var notes = form.querySelector('[data-check="notes"]');
+      if (notes) notes.classList.toggle("is-na", mealsNeedingNote === 0);
     };
     form.querySelector("#title").addEventListener("input", refresh);
     // Show that a save is under way; stop double submits.

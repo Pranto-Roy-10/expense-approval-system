@@ -183,6 +183,7 @@ def test_receipts_are_stored_and_served_to_reviewers_only(client, team):
             assert res.mimetype == "image/png" and res.data == PNG
             assert res.headers["X-Content-Type-Options"] == "nosniff"
             assert "inline" in res.headers["Content-Disposition"]
+        res.close()  # receipts are streamed from disk; release the file handle
 
 
 def test_pdf_receipt_is_served_inline(client, team):
@@ -190,6 +191,7 @@ def test_pdf_receipt_is_served_inline(client, team):
     claim = new_claim(client, files={0: ("hotel.pdf", PDF)})
     res = client.get(f"/claims/receipts/{claim.items[0].id}")
     assert res.mimetype == "application/pdf" and "inline" in res.headers["Content-Disposition"]
+    res.close()
 
 
 def test_fake_or_unsupported_receipts_are_refused(client, team):

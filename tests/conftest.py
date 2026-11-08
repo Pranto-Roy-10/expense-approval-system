@@ -16,6 +16,8 @@ def app(tmp_path):
     app = create_app(Config)
     with app.app_context():
         yield app
+        db.session.remove()
+        db.engine.dispose()  # close the in-memory database so no connection outlives the test
 
 
 @pytest.fixture

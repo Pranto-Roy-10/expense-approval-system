@@ -104,10 +104,11 @@ i.c3, .seg.c3 { background: var(--c3); stroke: var(--c3); }
 .phone-rows span { display: grid; line-height: 1.25; font-weight: 600; }
 .phone-rows small { font-weight: 400; color: var(--lp-muted); font-size: .6rem; }
 .phone-cta { margin-top: .6rem; padding: .55rem; border-radius: 999px; background: var(--lp-accent); color: var(--on-brand); font-size: .72rem; font-weight: 600; }
-@media (max-width: 639px) {
-  .lp-devices { min-height: 27rem; }
-  .browser { display: none; }
+@media (max-width: 639px) {  /* phone and browser mockups stacked, both shown */
+  .lp-devices { min-height: 0; display: grid; gap: 1.75rem; justify-items: center; }
   .phone { position: relative; top: 0; margin: 0 auto; }
+  .browser { position: relative; top: 0; right: auto; width: 100%; }
+  .browser-body { padding-left: 1.1rem; }
 }
 
 /* ---- Facts strip ---- */
