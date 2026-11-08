@@ -386,3 +386,41 @@ def test_finance_exports_approved_claims_as_csv(client, team):
     strings = book.read("xl/sharedStrings.xml").decode()
     assert "Approved claims" in strings and "Status: Approved and paid" in strings
     assert "Printer ink" in strings and "Still in review" not in strings
+
+
+def test_exports_keep_formula_like_titles_as_text(client, team):
+    import zipfile
+    sign_in(client, team["employee"])
+    claim = new_claim(client, action="submit", title='=HYPERLINK("http://x","Open")',
+                      lines=(("Office Supplies", "Ink", "900", "BDT", ""),))
+    sign_in(client, team["manager"])
+    post(client, f"/claims/{claim.id}/approve")
+
+    sign_in(client, team["finance"])
+    csv_text = client.get("/dashboard/approved.csv").data.decode("utf-8-sig")
+    assert "'=HYPERLINK" in csv_text
+    book = zipfile.ZipFile(io.BytesIO(client.get("/dashboard/approved.xlsx").data))
+    assert "HYPERLINK" not in book.read("xl/worksheets/sheet1.xml").decode()  # not written as a formula
+    assert "=HYPERLINK" in book.read("xl/sharedStrings.xml").decode()  # kept as plain text
+
+
+def test_too_large_upload_returns_to_the_form_with_a_message(app, client, team):
+    app.config["MAX_CONTENT_LENGTH"] = 1024
+    sign_in(client, team["employee"])
+    res = post(client, "/claims/new", claim_form(files={0: ("big.pdf", PDF + b"0" * 4096)}),
+               content_type="multipart/form-data")
+    assert res.status_code == 302 and res.headers["Location"].endswith("/claims/new")
+    assert b"too large together" in client.get("/claims/new").data
+    assert Claim.query.count() == 0
+
+
+def test_ledger_shows_the_newest_claims_and_says_how_many_are_left_out(monkeypatch, client, team):
+    from app import dashboard
+    monkeypatch.setattr(dashboard, "LEDGER_ROWS", 1)
+    sign_in(client, team["employee"])
+    new_claim(client, action="submit", title="Older claim")
+    new_claim(client, action="submit", title="Newer claim")
+    sign_in(client, team["finance"])
+    page = client.get("/dashboard").data
+    assert b"1 older ones are left out" in page and b"data-capped" in page
+    assert b"Newer claim" in page and b"Older claim" not in page

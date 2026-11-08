@@ -5,7 +5,7 @@
 {% block lead %}As of {{ today.strftime("%d %b %Y") }}. All amounts in Taka; USD and EUR converted at the fixed company rates.{% endblock %}
 {% block actions %}
 <div class="head-actions">
-  <button class="btn btn-ghost" type="button" data-export="{{ url_for('main.dashboard_export') }}">
+  <button class="btn btn-ghost" type="button" data-export="{{ url_for('main.dashboard_export') }}"{% if ledger_hidden %} data-capped{% endif %}>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export to Excel
   </button>
   <details class="menu" data-menu>
@@ -230,6 +230,7 @@
       </select>
     </div>
   </div>
+  {% if ledger_hidden %}<p class="panel-note ledger-cap">Showing the {{ ledger|length }} most recently updated claims; {{ ledger_hidden }} older ones are left out here. Export to Excel with no filters for every claim.</p>{% endif %}
   {% if ledger %}
   <div class="table-wrap">
     <table class="data-table" data-sortable>

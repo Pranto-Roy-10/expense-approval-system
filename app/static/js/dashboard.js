@@ -166,7 +166,11 @@
   var exportBtn = document.querySelector("[data-export]");
   exportBtn.addEventListener("click", function () {
     var params = new URLSearchParams();
-    params.set("ids", rows.filter(function (row) { return !row.hidden; }).map(function (row) { return row.dataset.code; }).join(","));
+    var narrowed = search.value.trim() || Array.prototype.some.call(filters, function (f) { return f.value; });
+    // a capped ledger without filters means "everything": let the server export every claim, not just the rows shown
+    if (narrowed || !exportBtn.hasAttribute("data-capped")) {
+      params.set("ids", rows.filter(function (row) { return !row.hidden; }).map(function (row) { return row.dataset.code; }).join(","));
+    }
     filters.forEach(function (f) { if (f.value) params.set(f.dataset.filter, f.value); });
     if (search.value.trim()) params.set("q", search.value.trim());
     window.location.href = exportBtn.dataset.export + "?" + params.toString();

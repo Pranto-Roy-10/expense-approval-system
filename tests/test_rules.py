@@ -194,6 +194,12 @@ def test_reject_needs_a_comment(team):
     assert claim.status == "submitted"
 
 
+def test_review_comment_is_capped_at_1000_characters(team):
+    claim = submitted(team, "200")
+    rules.reject(claim, user(team, "manager"), "x" * 5000)
+    assert len(claim.audit[-1].comment) == 1000
+
+
 def test_rejected_claim_can_be_resubmitted(team):
     claim = submitted(team, "5000")
     rules.approve(claim, user(team, "manager"))
@@ -239,6 +245,22 @@ def test_only_approved_claims_can_be_paid(team):
     claim = submitted(team, "200")
     with pytest.raises(RuleError, match="approved claims"):
         rules.mark_paid(claim, user(team, "finance"))
+
+
+def test_a_claim_changed_since_it_was_read_cannot_be_paid_again(team):
+    from sqlalchemy import update
+    from sqlalchemy.orm.exc import StaleDataError
+    from app.models import utcnow
+    claim = submitted(team, "200")
+    rules.approve(claim, user(team, "manager"))
+    db.session.commit()
+    # another request pays it first, after this one has already read it as "approved"
+    db.session.execute(update(Claim).where(Claim.id == claim.id).values(status="paid", updated_at=utcnow())
+                       .execution_options(synchronize_session=False))
+    rules.mark_paid(claim, user(team, "finance"))
+    with pytest.raises(StaleDataError):
+        db.session.commit()
+    db.session.rollback()
 
 
 def test_only_finance_can_pay(team):

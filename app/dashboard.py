@@ -3,16 +3,11 @@ from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal
 
-from .models import CATEGORIES, AuditEntry, Claim
+from .models import CATEGORIES, AuditEntry, Claim, utcnow
 
+LEDGER_ROWS = 1000  # newest claims shown in the ledger table; the Excel export always has every claim
 AGING = (("0–7 days", 0, 7), ("8–14 days", 8, 14), ("15–30 days", 15, 30), ("Over 30 days", 31, None))
 ZERO = Decimal(0)
-
-
-def _when(claim, status, pick=max):
-    """When the claim last (or first) moved into a status, from its audit trail."""
-    times = [a.created_at for a in claim.audit if a.to_status == status]
-    return pick(times) if times else None
 
 
 def _month(d):
@@ -25,7 +20,7 @@ def _change(now, before):
 
 
 def finance_overview(today=None):
-    today = today or date.today()
+    today = today or utcnow().date()  # audit times are stored in UTC, so months must be UTC too
     now = datetime.combine(today, datetime.max.time())
     this_month, last_month = _month(today), _month(today) - 1
     claims = Claim.query.filter(Claim.status != "draft").order_by(Claim.updated_at.desc()).all()
@@ -36,16 +31,16 @@ def finance_overview(today=None):
     paid_in, approved_in = defaultdict(Decimal), defaultdict(Decimal)
     waits = []
     for c in spent:
-        approved_at = _when(c, "approved")
+        approved_at = c.entered("approved")
         if approved_at:
             approved_in[_month(approved_at)] += c.total
         if c.status == "paid":
-            paid_at, submitted_at = _when(c, "paid"), _when(c, "submitted", min)
+            paid_at, submitted_at = c.entered("paid"), c.entered("submitted", min)
             paid_in[_month(paid_at)] += c.total
             if submitted_at:
                 waits.append((paid_at - submitted_at).total_seconds() / 86400)
 
-    payables = sorted((c for c in claims if c.status == "approved"), key=lambda c: _when(c, "approved"))
+    payables = sorted((c for c in claims if c.status == "approved"), key=lambda c: c.entered("approved"))
     signoff = sorted((c for c in claims if c.awaiting_finance), key=lambda c: c.manager_approved_at)
     decisions = AuditEntry.query.filter(AuditEntry.to_status.in_(("approved", "rejected"))).all()
     rejected = sum(1 for a in decisions if a.to_status == "rejected")
@@ -55,7 +50,7 @@ def finance_overview(today=None):
         "approved_month": approved_in[this_month],
         "approved_change": _change(approved_in[this_month], approved_in[last_month]),
         "payable": sum((c.total for c in payables), ZERO), "payable_count": len(payables),
-        "payable_oldest": days(_when(payables[0], "approved")) if payables else None,
+        "payable_oldest": days(payables[0].entered("approved")) if payables else None,
         "signoff": sum((c.total for c in signoff), ZERO), "signoff_count": len(signoff),
         "signoff_oldest": days(signoff[0].manager_approved_at) if signoff else None,
         "avg_days": sum(waits) / len(waits) if waits else None, "paid_count": len(waits),
@@ -80,7 +75,7 @@ def finance_overview(today=None):
     # ---- Payables aging: days since final approval ----
     aging = [{"label": label, "count": 0, "total": ZERO} for label, _, _ in AGING]
     for c in payables:
-        age = days(_when(c, "approved"))
+        age = days(c.entered("approved"))
         bucket = next(i for i, (_, lo, hi) in enumerate(AGING) if age >= lo and (hi is None or age <= hi))
         aging[bucket]["count"] += 1
         aging[bucket]["total"] += c.total
@@ -103,13 +98,13 @@ def finance_overview(today=None):
         o["total"] += c.total
 
     attention = [{"claim": c, "kind": "Sign-off", "age": days(c.manager_approved_at)} for c in signoff]
-    attention += [{"claim": c, "kind": "Payment", "age": days(_when(c, "approved"))} for c in payables]
+    attention += [{"claim": c, "kind": "Payment", "age": days(c.entered("approved"))} for c in payables]
     attention.sort(key=lambda a: -a["age"])
 
     ledger = [{
         "claim": c,
-        "category": max(c.items, key=lambda i: i.base_amount).category if c.items else "",
-        "submitted": _when(c, "submitted", min),
+        "category": c.main_category,
+        "submitted": c.entered("submitted", min),
     } for c in claims]
 
     chart = {
@@ -125,6 +120,6 @@ def finance_overview(today=None):
         "categories": sorted(by_category.items(), key=lambda kv: -kv[1]),
         "currencies": sorted(by_currency.values(), key=lambda c: -c["base"]),
         "claimants": sorted(owners.values(), key=lambda o: -o["total"])[:5],
-        "attention": attention[:6], "ledger": ledger,
+        "attention": attention[:6], "ledger": ledger[:LEDGER_ROWS], "ledger_hidden": max(0, len(ledger) - LEDGER_ROWS),
         "owners": sorted({c.owner.name for c in claims}),
     }
