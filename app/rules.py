@@ -33,7 +33,7 @@ def validate_items(items):
 def _record(claim, actor, action, to_status, comment=None):
     claim.audit.append(AuditEntry(
         actor=actor, action=action, from_status=claim.status, to_status=to_status,
-        comment=(comment or "").strip() or None,
+        comment=(comment or "").strip()[:1000] or None,  # the column holds 1,000 characters
     ))
     claim.status = to_status
 

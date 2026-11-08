@@ -4,6 +4,7 @@ from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
 from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_from_directory, url_for
+from sqlalchemy.orm.exc import StaleDataError
 from werkzeug.utils import secure_filename
 
 from . import rules
@@ -108,7 +109,8 @@ def _delete_receipt(stored):
 
 
 def _save(claim):
-    """Validate the posted form and apply it to the claim. Returns an error message or None."""
+    """Validate the posted form and apply it to the claim.
+    Returns (error or None, rows, receipt files to delete once the change is committed)."""
     title = request.form.get("title", "").strip()[:160]
     rows = _rows_from_form()
     try:
@@ -117,27 +119,26 @@ def _save(claim):
         rules.validate_items([LineItem(**_typed(r)) for r in rows])
         exts = [_check_upload(r["upload"], n) for n, r in enumerate(rows, 1)]
     except RuleError as e:
-        return str(e), rows
+        return str(e), rows, []
 
     existing = {str(i.id): i for i in claim.items}
-    kept = []
+    kept, stale = [], []
     for row, ext in zip(rows, exts):
         item = existing.pop(row["id"], None) or LineItem()
         for name, value in _typed(row).items():
             setattr(item, name, value)
         if ext or row["remove_receipt"]:
-            _delete_receipt(item.receipt_file)
+            stale.append(item.receipt_file)
             item.receipt_file = item.receipt_name = None
         if ext:
             item.receipt_file = f"{uuid4().hex}{ext}"
             item.receipt_name = secure_filename(row["upload"].filename) or f"receipt{ext}"
             row["upload"].save(os.path.join(current_app.config["RECEIPT_DIR"], item.receipt_file))
         kept.append(item)
-    for gone in existing.values():
-        _delete_receipt(gone.receipt_file)
+    stale += [gone.receipt_file for gone in existing.values()]
     claim.title = title
     claim.items = kept
-    return None, rows
+    return None, rows, stale
 
 
 def _render_form(claim, rows, error=None):
@@ -148,21 +149,23 @@ def _render_form(claim, rows, error=None):
                            categories=CATEGORIES, currencies=RATES), (400 if error else 200)
 
 
-def _after_save(claim):
-    """Save draft, or save and submit, depending on which button was pressed."""
+def _after_save(claim, stale):
+    """Save draft, or save and submit, depending on which button was pressed.
+    Old receipt files are removed only after the commit, so a failed save never loses one."""
+    target = url_for("claims.detail", claim_id=claim.id)
     if request.form.get("action") == "submit":
         try:
             rules.submit(claim, g.user)
+            flash(f"{claim.code} submitted to {g.user.manager.name} for review.", "success")
         except RuleError as e:
-            db.session.commit()  # keep the edits as a draft, then explain why it wasn't submitted
-            flash(str(e), "error")
-            return redirect(url_for("claims.edit", claim_id=claim.id))
-        db.session.commit()
-        flash(f"{claim.code} submitted to {g.user.manager.name} for review.", "success")
+            flash(str(e), "error")  # the edits are still kept as a draft
+            target = url_for("claims.edit", claim_id=claim.id)
     else:
-        db.session.commit()
         flash(f"{claim.code} saved as a draft.", "success")
-    return redirect(url_for("claims.detail", claim_id=claim.id))
+    db.session.commit()
+    for stored in stale:
+        _delete_receipt(stored)
+    return redirect(target)
 
 
 # ---------- Routes ----------
@@ -172,13 +175,13 @@ def _after_save(claim):
 def new():
     claim = Claim(owner_id=g.user.id)  # added to the session only once it is valid
     if request.method == "POST":
-        error, rows = _save(claim)
+        error, rows, stale = _save(claim)
         if error:
             return _render_form(claim, rows, error)
         db.session.add(claim)
         rules.record_created(claim, g.user)
         db.session.flush()  # assigns the claim number used in the message
-        return _after_save(claim)
+        return _after_save(claim, stale)
     blank = {"key": "n0", "id": "", "date": date.today().isoformat(), "category": "", "description": "",
              "amount": "", "currency": "BDT", "note": "", "remove_receipt": False, "upload": None, "receipt_name": ""}
     return _render_form(claim, [blank])
@@ -192,11 +195,11 @@ def edit(claim_id):
         flash("Only draft or rejected claims can be edited.", "error")
         return redirect(url_for("claims.detail", claim_id=claim.id))
     if request.method == "POST":
-        error, rows = _save(claim)
+        error, rows, stale = _save(claim)
         if error:
             db.session.rollback()
             return _render_form(claim, rows, error)
-        return _after_save(claim)
+        return _after_save(claim, stale)
     return _render_form(claim, _rows_from_claim(claim))
 
 
@@ -214,10 +217,11 @@ def delete(claim_id):
     if claim.owner_id != g.user.id or claim.status != "draft":
         flash("Only drafts can be deleted.", "error")
         return redirect(url_for("claims.detail", claim_id=claim.id))
-    for item in claim.items:
-        _delete_receipt(item.receipt_file)
+    stale = [item.receipt_file for item in claim.items]
     db.session.delete(claim)
     db.session.commit()
+    for stored in stale:
+        _delete_receipt(stored)
     flash(f"{claim.code} deleted.", "success")
     return redirect(url_for("main.workspace"))
 
@@ -230,7 +234,12 @@ def _transition(claim_id, action, success):
         db.session.rollback()
         flash(str(e), "error")
         return redirect(url_for("claims.detail", claim_id=claim_id))
-    db.session.commit()
+    try:
+        db.session.commit()
+    except StaleDataError:  # someone else changed the claim between our read and our save
+        db.session.rollback()
+        flash("This claim was just changed by someone else. Check it and try again.", "error")
+        return redirect(url_for("claims.detail", claim_id=claim_id))
     flash(success.format(code=claim.code, label=claim.label.lower()), "success")
     return redirect(url_for("main.workspace") if g.user.role != "employee" else url_for("claims.detail", claim_id=claim_id))
 
