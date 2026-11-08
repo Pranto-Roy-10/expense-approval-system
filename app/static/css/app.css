@@ -130,7 +130,7 @@
 
 /* ---------- Claim detail ---------- */
 .claim-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; font-size: 1rem; }
-.head-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .callout-rejected { margin: 0 0 1.25rem; border-style: solid; border-color: var(--rejected-bg); }
 .items-table .cat { margin-bottom: .3rem; }
 .item-desc { display: block; font-weight: 500; }
@@ -141,7 +141,6 @@
 .review-panel { border-color: var(--brand); }
 .review-panel .form-actions { justify-content: flex-end; margin-top: 1rem; }
 .steps-track { left: var(--inset, 16.66%); right: var(--inset, 16.66%); }
-.dot-draft { background: var(--border-strong); }
 
 /* receipt viewer */
 .viewer { width: min(56rem, calc(100vw - 2rem)); height: min(85vh, 60rem); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow-lg); overflow: hidden; }
@@ -207,9 +206,8 @@
 .has-shell .back-link { margin-bottom: 1rem; }
 
 /* ---------- Shared grids ---------- */
- /* equal-height panels: no gap under the shorter one */
-
 .panel-gap { margin-top: 1rem; }
+.ledger-cap { margin: 0; padding: .75rem 1.5rem; border-bottom: 1px solid var(--border); }
 .dot-draft { background: var(--draft-fg); }
 
 /* ---------- Finance dashboard ---------- */
@@ -228,7 +226,6 @@
   --fx-BDT: #a8a29e; --fx-USD: #9085e9; --fx-EUR: #2f9e2f;
   --up: #4ade80; --down: #fda4af;
 }
-.head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 
 .kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1rem; }
 @media (min-width: 900px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
