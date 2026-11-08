@@ -521,7 +521,7 @@ dt { font-size: .8125rem; color: var(--muted); }
 
 .summary .panel-head { border-bottom: 0; padding-bottom: 0; }
 .summary-total { display: grid; gap: .1rem; padding: .5rem 1.25rem 1.1rem; border-bottom: 1px solid var(--border); }
-.summary-total span { font-size: .8125rem; color: var(--muted); }
+.summary-total > span { font-size: .8125rem; color: var(--muted); }  /* the label only, not the number inside <strong> */
 .summary-total strong { font-size: 1.75rem; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .summary-total small { font-size: .75rem; color: var(--muted); }
 .summary-rows { margin: 0; padding: .4rem 1.25rem; border-bottom: 1px solid var(--border); }
