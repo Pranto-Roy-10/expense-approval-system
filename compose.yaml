@@ -3,6 +3,8 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-}  # optional; when empty the app picks a random key at start
     volumes:
       - instance:/app/instance  # keeps the SQLite database and receipts between runs
 volumes:

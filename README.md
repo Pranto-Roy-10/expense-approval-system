@@ -61,12 +61,13 @@ On first start the app creates the database and fills it with sample people and 
 
 - **`Dockerfile`**
   - Starts from the official `python:3.13-slim` image.
-  - Installs `requirements.txt`, then copies the code in.
-  - Runs Flask on `0.0.0.0:5000`, so the server can be reached from outside the container.
+  - Installs `requirements.txt` and the Gunicorn production server, then copies the code in.
+  - Runs Gunicorn with two workers on `0.0.0.0:5000`, so the server can be reached from outside the container. `--preload` sets the app up once before the workers start.
   - `.dockerignore` keeps the local database, `.env`, virtual environments, caches and git history out of the image.
 - **`compose.yaml`**
   - Builds that image as the `web` service.
   - Maps port 5000 in the container to port 5000 on your computer.
+  - Passes `SECRET_KEY` through from your shell or a `.env` file. When it is not set, the app picks a random key at each start.
   - Mounts a named volume, `instance`, at `/app/instance`. The SQLite database and uploaded receipts live there, so they survive restarts and rebuilds.
   - `docker compose down` keeps the volume, and `docker compose down -v` deletes it.
 - **First run**: the app finds an empty database, creates the tables and loads the sample data, as it does outside Docker.
@@ -87,7 +88,7 @@ Rafiq Hasan and Sadia Rahman are two more employees on Tanvir Ahmed's team.
 
 | Variable       | Default                    | Purpose |
 |----------------|----------------------------|---------|
-| `SECRET_KEY`   | `dev`                      | Signs the session cookie. Set a long random value in any shared deployment. |
+| `SECRET_KEY`   | random on each start       | Signs the session cookie. Set a long random value so sign-ins survive a restart. |
 | `DATABASE_URL` | `sqlite:///expenses.db`    | SQLAlchemy database URL. |
 
 Values can also be placed in a `.env` file at the project root.
@@ -98,11 +99,12 @@ Values can also be placed in a `.env` file at the project root.
 python -m pytest -q
 ```
 
-There are 70 tests:
+There are 76 tests:
 
 - `tests/test_rules.py` covers every business rule.
 - `tests/test_flows.py` runs full journeys through the HTTP layer: create, submit, review, reject and resubmit, pay, permissions, CSRF, receipts and exports.
 - `tests/test_landing.py` and `tests/test_health.py` cover the public pages.
+- `tests/test_seed.py` loads the sample data through the real rules, so a rule change that breaks it fails a test instead of the app start-up.
 
 GitHub Actions runs the suite on every push and pull request (`.github/workflows/tests.yml`).
 
@@ -210,4 +212,5 @@ Dockerfile, compose.yaml
 - **Approved export.** The approved-claims export also includes claims that are already paid, because they were approved first.
 - **Sign-in.** The sample accounts sign in without a password to make reviewing quick. Accounts created through sign-up use a hashed password.
 - **Manager required.** Every employee needs a manager before they can submit. Each manager reviews only their own direct reports.
+- **Roles are self-chosen.** Real authentication is out of scope, so sign-up lets people pick any role, and an employee can change their manager on the profile page. In a real deployment, an administrator would assign roles and managers.
 - **Windows note.** On Windows, if both Docker and a local `python run.py` are running, `127.0.0.1:5000` reaches the local process and `localhost:5000` may reach the container. Run one at a time.
