@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ user.name }} · Claimora{% endblock %}
+
+{% macro person(u, tag=None, me=False) %}
+<div class="org-node{{ ' is-me' if me }}">
+  <span class="avatar avatar-sm">{{ u.initials }}</span>
+  <span class="org-text"><strong>{{ u.name }}{% if me %} <span class="muted">(you)</span>{% endif %}</strong><span>{{ u.title or u.role|capitalize }}</span></span>
+  {% if tag %}<span class="org-tag">{{ tag }}</span>{% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<section class="section section-tight">
+  <div class="container">
+
+    <header class="panel profile-hero" data-intro>
+      <div class="profile-cover" aria-hidden="true"></div>
+      <div class="profile-hero-body">
+        <span class="avatar avatar-xl">{{ user.initials }}</span>
+        <div class="profile-who">
+          <p class="eyebrow">{{ user.role|capitalize }}</p>
+          <h1>{{ user.name }}</h1>
+          <p class="profile-meta">
+            <span>{{ user.title or "No job title" }}</span>
+            <span class="mono">{{ user.email }}</span>
+          </p>
+        </div>
+        <a class="btn btn-ghost profile-edit" href="{{ url_for('main.profile_edit') }}">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg>Edit profile
+        </a>
+      </div>
+    </header>
+
+    <div class="profile-layout">
+      <div class="stack">
+        <section class="panel" aria-labelledby="info-title" data-cards>
+          <div class="panel-head">
+            <h2 id="info-title" class="h3">Personal information</h2>
+            <a class="panel-action" href="{{ url_for('main.profile_edit') }}">Edit</a>
+          </div>
+          <dl class="info-grid">
+            <div><dt>Full name</dt><dd>{{ user.name }}</dd></div>
+            <div><dt>Work email</dt><dd class="mono">{{ user.email }}</dd></div>
+            <div><dt>Job title</dt><dd>{{ user.title or "Not set" }}</dd></div>
+            <div><dt>Employee ID</dt><dd class="mono">EMP-{{ "%04d"|format(user.id) }}</dd></div>
+            <div><dt>Role</dt><dd>{{ user.role|capitalize }}</dd></div>
+            <div><dt>Reports to</dt><dd>{{ user.manager.name if user.manager else "No manager" }}</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel" aria-labelledby="org-title" data-cards>
+          <div class="panel-head">
+            <div>
+              <h2 id="org-title" class="h3">Reporting line</h2>
+              <p class="panel-note">
+                {% if user.role == "employee" %}{{ user.manager.name if user.manager else "Your manager" }} reviews the claims you submit.
+                {% elif user.role == "manager" %}You review claims from {{ user.reports|length }} {{ "person" if user.reports|length == 1 else "people" }}.
+                {% else %}Finance signs off claims over ৳1,000 and records payments for everyone.{% endif %}
+              </p>
+            </div>
+          </div>
+          <div class="org panel-body">
+            {% if user.manager %}{{ person(user.manager, "Manager") }}<span class="org-line" aria-hidden="true"></span>{% endif %}
+            {{ person(user, None, True) }}
+            {% if user.reports %}
+            <span class="org-line" aria-hidden="true"></span>
+            <div class="org-reports">
+              <p class="org-label">Direct reports · {{ user.reports|length }}</p>
+              {% for r in user.reports %}{{ person(r) }}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="panel" aria-labelledby="glance-title" data-cards>
+          <div class="panel-head">
+            <h2 id="glance-title" class="h3">Overview</h2>
+            <a class="panel-action" href="{{ url_for('main.dashboard' if user.role == 'finance' else 'main.workspace') }}">Open workspace</a>
+          </div>
+          <dl class="figures">
+            {% for label, value, kind in figures %}
+            <div><dt>{{ label }}</dt><dd>{% if kind == "money" %}৳&nbsp;<span>{{ value|taka(0) }}</span>{% else %}<span>{{ value }}</span>{% endif %}</dd></div>
+            {% endfor %}
+          </dl>
+        </section>
+
+        <section class="panel" aria-labelledby="account-title" data-cards>
+          <div class="panel-head"><h2 id="account-title" class="h3">Account</h2></div>
+          <dl class="rows">
+            <div><dt>Account type</dt><dd>{{ "Sample account" if user.is_sample else "Personal account" }}</dd></div>
+            <div><dt>Sign-in</dt><dd>{{ "Get started page" if user.is_sample else "Email and password" }}</dd></div>
+            <div><dt>Password</dt><dd>{% if user.is_sample %}<span class="muted">Not used</span>{% elif user.password_hash %}<span class="state state-ok">Set</span>{% else %}<span class="state">Not set</span>{% endif %}</dd></div>
+            <div><dt>Last active</dt><dd>{% if last_action %}{{ last_action.action.split(",")[0].split(" by ")[0] }} <a class="plain-link mono" href="{{ url_for('claims.detail', claim_id=last_action.claim_id) }}">{{ last_action.claim.code }}</a><span class="rows-sub">{{ last_action.created_at.strftime("%d %b %Y, %H:%M") }} UTC</span>{% else %}<span class="muted">No activity yet</span>{% endif %}</dd></div>
+          </dl>
+        </section>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

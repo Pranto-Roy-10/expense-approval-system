@@ -1,0 +1,86 @@
+{% extends "workspace/_layout.html" %}
+{% from "_macros.html" import badge, metric, empty with context %}
+{% block title %}My claims · Claimora{% endblock %}
+{% block heading %}My <strong>claims</strong>{% endblock %}
+{% block lead %}{% if g.user.manager %}Claims you submit go to {{ g.user.manager.name }} first. Anything over ৳1,000 also needs Finance sign-off.{% else %}Create claims, attach receipts and track them until they're paid.{% endif %}{% endblock %}
+{% block actions %}
+<a class="btn btn-primary" href="{{ url_for('claims.new') }}">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New claim
+</a>
+{% endblock %}
+
+{% block workspace %}
+{% set todo = claims|selectattr("status", "in", ["draft", "rejected"])|list %}
+{% set in_review = claims|selectattr("status", "eq", "submitted")|list %}
+{% set approved = claims|selectattr("status", "eq", "approved")|list %}
+{% set paid = claims|selectattr("status", "eq", "paid")|list %}
+
+<div class="metrics" data-cards>
+  {{ metric("Needs your action", todo|length, "Drafts and returned claims") }}
+  {{ metric("In review", in_review|length, "With your manager or Finance") }}
+  {{ metric("Awaiting payment", approved|sum(attribute="total"), approved|length ~ " approved claim" ~ ("s" if approved|length != 1 else ""), money=True) }}
+  {{ metric("Reimbursed", paid|sum(attribute="total"), paid|length ~ " paid claim" ~ ("s" if paid|length != 1 else ""), money=True) }}
+</div>
+
+{% if todo %}
+<section class="panel ws-section" aria-labelledby="todo-title" data-cards>
+  <div class="panel-head"><h2 id="todo-title" class="h3">Needs your action</h2><span class="count">{{ todo|length }}</span></div>
+  <ul class="action-list">
+    {% for c in todo %}
+    {% set note = (c.audit|selectattr("to_status", "eq", "rejected")|first) if c.status == "rejected" else none %}
+    <li>
+      <span class="action-dot action-{{ c.status }}" aria-hidden="true"></span>
+      <div class="action-main">
+        <p><a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a> <span class="claim-id">{{ c.code }}</span></p>
+        {% if note %}
+        <p class="action-note"><strong>{{ note.actor.name }} returned this</strong>{% if note.comment %}: “{{ note.comment }}”{% endif %}</p>
+        {% else %}
+        <p class="action-note">Draft · {{ c.items|length }} item{{ "s" if c.items|length != 1 }}, {{ c.receipts }} receipt{{ "s" if c.receipts != 1 }} · ৳&nbsp;{{ c.total|taka }}</p>
+        {% endif %}
+      </div>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('claims.edit', claim_id=c.id) }}">{{ "Fix and resubmit" if c.status == "rejected" else "Continue" }}</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="panel ws-section" aria-labelledby="claims-title" data-cards>
+  <div class="panel-head panel-head-tools">
+    <h2 id="claims-title" class="h3">All claims</h2>
+    {% if claims %}
+    <div class="tabs" role="group" aria-label="Filter by status" data-tabs>
+      {% for key, label, group in [("", "All", claims), ("draft rejected", "To do", todo), ("submitted", "In review", in_review), ("approved", "Approved", approved), ("paid", "Paid", paid)] %}
+      <button type="button" class="tab" data-tab="{{ key }}" aria-pressed="{{ 'true' if loop.first else 'false' }}">{{ label }} <span>{{ group|length }}</span></button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% if claims %}
+  <div class="table-wrap">
+    <table class="data-table" data-tab-table>
+      <thead>
+        <tr><th scope="col">Claim</th><th scope="col">Where it is</th><th scope="col">Receipts</th><th scope="col">Updated</th><th scope="col" class="num">Total (৳)</th></tr>
+      </thead>
+      <tbody>
+        {% for c in claims %}
+        <tr class="is-link" data-status="{{ c.status }}">
+          <td>
+            <a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a>
+            <span class="cell-sub">{{ c.code }} · {{ c.items|length }} item{{ "s" if c.items|length != 1 }}</span>
+          </td>
+          <td>{{ badge(c) }}<span class="cell-sub">{{ c.stage }}</span></td>
+          <td class="nowrap">{% if c.receipts == c.items|length %}<span class="tick">All {{ c.receipts }}</span>{% else %}{{ c.receipts }} of {{ c.items|length }}{% endif %}</td>
+          <td class="nowrap">{{ c.updated_at.strftime("%d %b %Y") }}</td>
+          <td class="num">{{ c.total|taka }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted table-none" data-tab-none hidden>No claims in this view.</p>
+  </div>
+  {% else %}
+  {{ empty("No claims yet. ", "Create a claim, add a line for each expense with its receipt, then submit it.") }}
+  {% endif %}
+</section>
+{% endblock %}

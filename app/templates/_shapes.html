@@ -1,0 +1,7 @@
+{# A large decagon inside a thin ring; placed half off a page edge as a background shape. #}
+{% macro decagon(cls) %}
+<svg class="dec-shape {{ cls }}" viewBox="-12 -12 124 124" aria-hidden="true" focusable="false">
+  <polygon class="dec-ring" points="108,50 96.92,15.91 67.92,-5.16 32.08,-5.16 3.08,15.91 -8,50 3.08,84.09 32.08,105.16 67.92,105.16 96.92,84.09"/>
+  <polygon class="dec-solid" points="100,50 90.45,20.61 65.45,2.45 34.55,2.45 9.55,20.61 0,50 9.55,79.39 34.55,97.55 65.45,97.55 90.45,79.39"/>
+</svg>
+{% endmacro %}
