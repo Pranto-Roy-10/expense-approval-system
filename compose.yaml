@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - instance:/app/instance  # keeps the SQLite database and receipts between runs
+volumes:
+  instance:
