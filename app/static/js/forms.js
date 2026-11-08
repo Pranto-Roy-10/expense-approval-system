@@ -149,6 +149,18 @@
     });
   });
 
+  // One click per action: approve, reject, pay, submit and delete buttons lock once their form is sent.
+  // The claim form and the role picker have their own busy states.
+  document.querySelectorAll('form[method="post"]:not([data-claim-form]):not([data-role-form])').forEach(function (f) {
+    f.addEventListener("submit", function (e) {
+      if (e.defaultPrevented) return; // a confirm or required comment stopped it
+      setTimeout(function () { f.querySelectorAll("button[type=submit], button:not([type])").forEach(function (b) { b.disabled = true; }); }, 0);
+    });
+  });
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) document.querySelectorAll('form[method="post"] button:disabled').forEach(function (b) { b.disabled = false; });
+  });
+
   // ---------- Receipt viewer ----------
   var viewer = document.querySelector("[data-viewer]");
   if (viewer) {

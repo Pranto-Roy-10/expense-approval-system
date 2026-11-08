@@ -45,11 +45,17 @@ class Claim(db.Model):
     # set when the manager approves a claim that still needs Finance
     manager_approved_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    # updated_at doubles as a version: a save fails if someone else changed the claim since it was read,
+    # so two clicks on "Mark as paid" at once can't both go through
+    __mapper_args__ = {"version_id_col": updated_at, "version_id_generator": lambda _: utcnow()}
 
     owner = db.relationship("User", backref="claims")
-    items = db.relationship("LineItem", backref="claim", cascade="all, delete-orphan", order_by="LineItem.date")
-    audit = db.relationship("AuditEntry", backref="claim", cascade="all, delete-orphan", order_by="AuditEntry.id.desc()")
+    # "selectin": lists of claims load all their lines and history in one extra query each, not one per claim
+    items = db.relationship("LineItem", backref="claim", cascade="all, delete-orphan", order_by="LineItem.date",
+                            lazy="selectin")
+    audit = db.relationship("AuditEntry", backref="claim", cascade="all, delete-orphan", order_by="AuditEntry.id.desc()",
+                            lazy="selectin")
 
     @property
     def code(self):
@@ -81,9 +87,15 @@ class Claim(db.Model):
     def receipts(self):
         return sum(1 for item in self.items if item.receipt_file)
 
-    def entered(self, status):
-        """When the claim last moved into a status, from its audit trail."""
-        return next((a.created_at for a in self.audit if a.to_status == status), None)
+    def entered(self, status, pick=max):
+        """When the claim last (or, with pick=min, first) moved into a status, from its audit trail."""
+        times = [a.created_at for a in self.audit if a.to_status == status]
+        return pick(times) if times else None
+
+    @property
+    def main_category(self):
+        """The category of the largest line, in base currency."""
+        return max(self.items, key=lambda i: i.base_amount).category if self.items else ""
 
     @property
     def editable(self):
