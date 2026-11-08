@@ -24,7 +24,7 @@
   --submitted-fg: #92400e; --submitted-bg: #fdecc8;
   --approved-fg: #166534;  --approved-bg: #dcfce7;
   --rejected-fg: #9f1239;  --rejected-bg: #ffe4e6;
-  --paid-fg: #6b21a8;      --paid-bg: #f3e8ff;
+  --paid-fg: #1e40af;      --paid-bg: #dbeafe;
   --ok: #16a34a;
 
   --radius: .75rem;
@@ -59,7 +59,7 @@
   --submitted-fg: #fcd34d; --submitted-bg: rgb(252 211 77 / .14);
   --approved-fg: #86efac;  --approved-bg: rgb(134 239 172 / .13);
   --rejected-fg: #fda4af;  --rejected-bg: rgb(253 164 175 / .13);
-  --paid-fg: #d8b4fe;      --paid-bg: rgb(216 180 254 / .14);
+  --paid-fg: #93c5fd;      --paid-bg: rgb(147 197 253 / .14);
   --ok: #4ade80;
   color-scheme: dark;
 }
@@ -106,6 +106,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 /* reading progress line, driven by GSAP */
 .site-header::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--brand); transform: scaleX(var(--progress, 0)); transform-origin: left; }
 .nav { display: flex; align-items: center; gap: .75rem; height: 4.25rem; }
+.nav > .btn { flex-shrink: 0; white-space: nowrap; min-height: 2.75rem; } /* same height as the theme toggle */
 .brand { display: inline-flex; align-items: center; gap: .625rem; font-weight: 700; font-size: 1.25rem; letter-spacing: -.02em; color: var(--text); text-decoration: none; margin-right: auto; }
 .brand-mark { width: 1.75rem; height: 1.75rem; flex-shrink: 0; }
 .brand-mark rect { fill: var(--brand); stroke: none; }
@@ -125,11 +126,8 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 
 /* ---------- Shared ---------- */
 .eyebrow { font-family: var(--mono); font-size: .8125rem; font-weight: 500; text-transform: uppercase; letter-spacing: .1em; color: var(--brand-text); margin-bottom: 1rem; }
-.eyebrow-rule { display: flex; align-items: center; gap: .75rem; }
-.eyebrow-rule::before { content: ""; width: 1.75rem; height: 2px; background: var(--brand); transform: scaleX(var(--draw, 1)); transform-origin: left; flex-shrink: 0; }
 .lead { font-size: 1.125rem; color: var(--muted); max-width: 58ch; }
 .section { padding: 5rem 0; position: relative; }
-.section-alt { background: var(--bg-alt); border-block: 1px solid var(--border); }
 .section-head { max-width: 43.75rem; margin-bottom: 3rem; }
 .section-head p:last-child { color: var(--muted); font-size: 1.075rem; }
 @media (min-width: 1024px) { .section { padding: 7rem 0; } }
@@ -143,29 +141,11 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .badge-paid { color: var(--paid-fg); background: var(--paid-bg); }
 
 /* ---------- Cards: one shared surface ---------- */
-.claim-card, .float-card, .lifecycle li, .callout, .role-card, .rule, .timeline {
+.claim-card, .float-card, .callout, .timeline, .panel {
   position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-sm);
 }
-/* interactive cards lift and show a saffron top edge on hover */
-.lifecycle li, .role-card, .rule { overflow: hidden; transition: border-color .25s, translate .25s, box-shadow .25s; }
-.lifecycle li::before, .role-card::before, .rule::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--brand); transform: scaleX(0); transform-origin: left; transition: transform .35s ease-out; }
-.lifecycle li:hover, .role-card:hover, .rule:hover { border-color: var(--border-strong); translate: 0 -.2rem; box-shadow: var(--shadow); }
-.lifecycle li:hover::before, .role-card:hover::before, .rule:hover::before { transform: scaleX(1); }
 
-/* ---------- Hero ---------- */
-.hero { position: relative; padding: 3.5rem 0 5rem; }
-.hero-grid { display: grid; gap: 3.5rem; align-items: center; }
-@media (min-width: 1024px) { .hero { padding: 6rem 0 7rem; } .hero-grid { grid-template-columns: 1.05fr 1fr; gap: 4.5rem; } }
-
-/* saffron underline under the key phrase, drawn in by GSAP */
-.mark { background: linear-gradient(var(--brand), var(--brand)) left 94% / calc(var(--hl, 1) * 100%) .14em no-repeat; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 2rem 0; }
-.hero-points { list-style: none; padding: 0; margin: 0; display: grid; gap: .7rem; color: var(--muted); }
-.hero-points li { display: flex; gap: .7rem; align-items: center; }
-.hero-points svg { width: 1.25rem; height: 1.25rem; color: var(--ok); flex-shrink: 0; stroke-width: 2.5; }
-.hero-points svg path { stroke-dasharray: 1; }
-
-.hero-visual { position: relative; min-width: 0; }
+/* ---------- Sample claim card (sign-in side panel) ---------- */
 .claim-card { margin: 0; box-shadow: var(--shadow-lg); padding: 1.5rem; }
 @media (min-width: 640px) { .claim-card { padding: 1.75rem; margin: 0 1.5rem; } }
 .claim-head { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; margin-bottom: 1.25rem; }
@@ -198,13 +178,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .float-icon svg { width: 1.05rem; height: 1.05rem; }
 .float-icon.ok { color: var(--approved-fg); background: var(--approved-bg); }
 .float-icon.warn { color: var(--submitted-fg); background: var(--submitted-bg); }
-/* floats sit in the card's outer padding so they never cover claim content */
-.float-approve { top: 0; left: -.5rem; }
-.float-rule { bottom: 0; right: -.5rem; }
-@media (min-width: 640px) {
-  .float-card { display: flex; }
-  .hero-visual { padding: 3.25rem 0 3.75rem; } /* room for the floats above/below the card */
-}
+@media (min-width: 640px) { .float-card { display: flex; } }
 
 /* ---------- Ticker bar ---------- */
 .ticker { position: relative; overflow: hidden; border-block: 1px solid var(--border); background: var(--surface); padding: 1rem 0; }
@@ -217,54 +191,15 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .ticker-list li::after { content: ""; width: .375rem; height: .375rem; margin-left: 1.125rem; background: var(--brand); transform: rotate(45deg); }
 .ticker-list svg { width: 1.15rem; height: 1.15rem; color: var(--brand-text); }
 
-/* ---------- Lifecycle ---------- */
-.lifecycle-wrap { position: relative; }
-.lifecycle-track { display: none; }
-.lifecycle { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; }
-@media (min-width: 640px) { .lifecycle { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) {
-  .lifecycle { grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
-  .lifecycle-track { display: block; position: absolute; top: 2.75rem; left: 2.5rem; right: 2.5rem; height: 2px; background: var(--border); z-index: 0; }
-  .lifecycle-track span { position: absolute; inset: 0; background: var(--brand); transform-origin: left; }
-}
-.lifecycle li { z-index: 1; padding: 1.5rem; }
-.stage-num { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; margin-bottom: 1.25rem; border-radius: var(--radius-sm); background: var(--text); color: var(--bg); font-family: var(--mono); font-size: .875rem; }
-/* dark mode: a quiet outlined tile instead of a bright one; status badges carry the colour */
-:root[data-theme="dark"] .stage-num { background: var(--surface-2); color: var(--muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
-.lifecycle h3 { margin-top: 1rem; }
-.lifecycle p { color: var(--muted); margin: 0; }
+/* ---------- Callout ---------- */
 .callout { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-top: 1.25rem; padding: 1.25rem 1.5rem; border-style: dashed; border-color: var(--border-strong); box-shadow: none; }
 .callout p { margin: 0; color: var(--muted); flex: 1 1 17.5rem; }
 
-/* ---------- Roles ---------- */
-.roles { display: grid; gap: 1.25rem; }
-@media (min-width: 900px) { .roles { grid-template-columns: repeat(3, 1fr); } }
-.role-card { padding: 1.75rem; }
+/* ---------- Role icon ---------- */
 .role-icon { width: 3rem; height: 3rem; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--brand-soft); color: var(--brand-text); margin-bottom: 1.5rem; transition: background-color .25s, color .25s; }
-.role-card:hover .role-icon { background: var(--brand); color: var(--on-brand); }
 .role-icon svg { width: 1.4rem; height: 1.4rem; }
-.role-card > p { color: var(--muted); }
-.role-card ul { margin: 0; padding: 1.125rem 0 0; border-top: 1px solid var(--border); list-style: none; display: grid; gap: .6rem; font-size: .9375rem; }
-.role-card li { padding-left: 1.5rem; position: relative; }
-.role-card li::before { content: ""; position: absolute; left: 3px; top: .5em; width: .625rem; height: .375rem; border-left: 2px solid var(--ok); border-bottom: 2px solid var(--ok); transform: rotate(-45deg); }
 
-/* ---------- Rules ---------- */
-.rules { display: grid; gap: 1rem; margin: 0; }
-@media (min-width: 640px) { .rules { grid-template-columns: repeat(2, 1fr); } }
-@media (min-width: 1024px) { .rules { grid-template-columns: repeat(3, 1fr); } .rule-wide { grid-column: span 2; } }
-.rule { padding: 1.75rem; }
-.rule dt { font-size: 1.125rem; font-weight: 600; margin-bottom: .5rem; }
-.rule dd { margin: 0; color: var(--muted); font-size: .9375rem; }
-.rule-flow { display: flex; align-items: center; gap: .6rem; margin-top: 1.5rem; flex-wrap: wrap; }
-.rule-flow span { padding: .35rem .8rem; border-radius: .375rem; border: 1px solid var(--border-strong); font-size: .875rem; font-weight: 500; background: var(--surface-2); }
-.rule-flow span:last-child { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
-.rule-flow i { flex: 1; min-width: 1.25rem; max-width: 5rem; height: 2px; background: repeating-linear-gradient(90deg, var(--border-strong) 0 .375rem, transparent .375rem .625rem); transform-origin: left; }
-.chips { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.25rem 0 0; padding: 0; }
-.chips li { padding: .35rem .8rem; border-radius: .375rem; background: var(--brand-soft); color: var(--brand-text); font-size: .875rem; font-weight: 500; }
-
-/* ---------- Audit ---------- */
-.audit-grid { display: grid; gap: 3rem; align-items: center; }
-@media (min-width: 1024px) { .audit-grid { grid-template-columns: 1fr 1fr; gap: 4.5rem; } }
+/* ---------- Audit timeline ---------- */
 .timeline { list-style: none; margin: 0; padding: 1.75rem; box-shadow: var(--shadow-lg); }
 .timeline li { display: flex; gap: 1rem; position: relative; padding-bottom: 1.5rem; }
 .timeline li:last-child { padding-bottom: 0; }
@@ -277,15 +212,6 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .dot-approved { background: var(--ok); }
 .dot-submitted { background: var(--brand); }
 
-/* ---------- CTA ---------- */
-.cta { padding: 5rem 0; }
-.cta-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.5rem 2rem; padding: 2.5rem 2rem; border-radius: var(--radius); background: #1c1917; color: #f5f2ec; border: 1px solid #1c1917; }
-@media (min-width: 768px) { .cta-inner { padding: 3.5rem 3.5rem; } }
-:root[data-theme="dark"] .cta-inner { background: var(--surface); border-color: var(--border); }
-.cta h2 { margin-bottom: .4rem; }
-.cta p { color: #c9c3b6; margin: 0; font-size: 1.075rem; }
-:root[data-theme="dark"] .cta p { color: var(--muted); }
-
 /* ---------- Footer ---------- */
 .site-footer { border-top: 1px solid var(--border); padding: 2rem 0; font-size: .9375rem; color: var(--muted); }
 .footer-inner { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem 1.5rem; align-items: center; }
@@ -297,7 +223,7 @@ svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; 
 .footer-inner ul a:hover { color: var(--text); }
 
 /* Hide animated hero pieces until GSAP takes over (no-JS keeps them visible). */
-.js [data-hero], .js [data-hero-title], .js [data-hero-point], .js [data-claim-card], .js [data-float] { visibility: hidden; }
+.js [data-hero], .js [data-float] { visibility: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
