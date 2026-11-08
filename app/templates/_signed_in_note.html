@@ -1,0 +1,7 @@
+{# Shown on the account pages when someone is already signed in. Choosing an account here replaces the current one. #}
+{% if g.user %}
+<p class="flash flash-info" data-intro-tail>
+  You're signed in as <strong>{{ g.user.name }}</strong> ({{ g.user.role }}). Pick an account here to switch, or
+  <a href="{{ url_for('main.workspace') }}">go back to your workspace</a>.
+</p>
+{% endif %}
