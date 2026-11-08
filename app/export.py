@@ -15,15 +15,10 @@ COLUMNS = [("Claim ID", 12), ("Title", 34), ("Employee", 20), ("Manager", 20), (
            ("Submitted on", 14), ("Status", 18), ("Items", 8), ("Receipts", 10), ("Total (BDT)", 16)]
 
 
-def _submitted(claim):
-    times = [a.created_at for a in claim.audit if a.to_status == "submitted"]
-    return min(times) if times else None
-
-
 def claims_workbook(claims, filters, exported_by, title="Claims ledger"):
     """claims: in display order. filters: [(label, value)] that were applied. Returns .xlsx bytes."""
     out = BytesIO()
-    wb = xlsxwriter.Workbook(out, {"in_memory": True})
+    wb = xlsxwriter.Workbook(out, {"in_memory": True, "strings_to_formulas": False})  # titles are user text, never formulas
     wb.set_properties({"title": f"Claimora {title.lower()}", "author": exported_by, "company": "Claimora"})
     f = lambda **kw: wb.add_format({"font_name": "Calibri", "font_size": 10, "valign": "vcenter", **kw})
 
@@ -69,13 +64,12 @@ def claims_workbook(claims, filters, exported_by, title="Claims ledger"):
     row = header_row + 1
     for n, c in enumerate(claims):
         text, code, when, center, money = cells["#FFFFFF" if n % 2 == 0 else PAPER]
-        main = max(c.items, key=lambda i: i.base_amount).category if c.items else ""
-        submitted = _submitted(c)
+        submitted = c.entered("submitted", min)
         ws.write(row, 0, c.code, code)
         ws.write(row, 1, c.title, text)
         ws.write(row, 2, c.owner.name, text)
         ws.write(row, 3, c.owner.manager.name if c.owner.manager else "", text)
-        ws.write(row, 4, main, text)
+        ws.write(row, 4, c.main_category, text)
         if submitted:
             ws.write_datetime(row, 5, submitted, when)
         else:
