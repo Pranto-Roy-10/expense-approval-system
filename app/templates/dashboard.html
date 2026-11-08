@@ -1,0 +1,275 @@
+{% extends "workspace/_layout.html" %}
+{% from "_macros.html" import badge, empty with context %}
+{% block title %}Finance overview · Claimora{% endblock %}
+{% block heading %}Finance <strong>overview</strong>{% endblock %}
+{% block lead %}As of {{ today.strftime("%d %b %Y") }}. All amounts in Taka; USD and EUR converted at the fixed company rates.{% endblock %}
+{% block actions %}
+<div class="head-actions">
+  <button class="btn btn-ghost" type="button" data-export="{{ url_for('main.dashboard_export') }}">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Export to Excel
+  </button>
+  <details class="menu" data-menu>
+    <summary class="btn btn-ghost">Approved claims
+      <svg class="menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+    </summary>
+    <div class="menu-list">
+      <a href="{{ url_for('main.approved_xlsx') }}"><strong>Excel</strong><span>Branded, with a summary sheet</span></a>
+      <a href="{{ url_for('main.approved_csv') }}"><strong>CSV</strong><span>Plain text for other tools</span></a>
+    </div>
+  </details>
+  <a class="btn btn-primary" href="{{ url_for('main.workspace') }}">Approvals &amp; payments</a>
+</div>
+{% endblock %}
+
+{% macro delta(change, period) %}
+{% if change is not none %}<span class="delta {{ 'delta-up' if change >= 0 else 'delta-down' }}"><span aria-hidden="true">{{ "▲" if change >= 0 else "▼" }}</span> {{ "%.0f"|format(change|abs) }}%<span class="sr-only">{{ " up" if change >= 0 else " down" }}</span> vs {{ period }}</span>
+{% else %}<span class="delta">No {{ period }} figure</span>{% endif %}
+{% endmacro %}
+{% set last_month = chart.months[-2][:3] %}
+
+{% block workspace %}
+{# ---------- Headline figures ---------- #}
+<div class="kpis" data-cards>
+  <div class="kpi">
+    <p class="metric-label">Paid this month</p>
+    <p class="kpi-value">৳&nbsp;<span>{{ kpis.paid_month|taka(0) }}</span></p>
+    {{ delta(kpis.paid_change, last_month) }}
+  </div>
+  <div class="kpi">
+    <p class="metric-label">Approved this month</p>
+    <p class="kpi-value">৳&nbsp;<span>{{ kpis.approved_month|taka(0) }}</span></p>
+    {{ delta(kpis.approved_change, last_month) }}
+  </div>
+  <div class="kpi">
+    <p class="metric-label">Payables outstanding</p>
+    <p class="kpi-value">৳&nbsp;<span>{{ kpis.payable|taka(0) }}</span></p>
+    <p class="kpi-sub">{{ kpis.payable_count }} claim{{ "s" if kpis.payable_count != 1 }}{% if kpis.payable_oldest is not none %} · oldest {{ kpis.payable_oldest }}d{% endif %}</p>
+  </div>
+  <div class="kpi">
+    <p class="metric-label">Awaiting your sign-off</p>
+    <p class="kpi-value">৳&nbsp;<span>{{ kpis.signoff|taka(0) }}</span></p>
+    <p class="kpi-sub">{{ kpis.signoff_count }} claim{{ "s" if kpis.signoff_count != 1 }}{% if kpis.signoff_oldest is not none %} · oldest {{ kpis.signoff_oldest }}d{% endif %}</p>
+  </div>
+  <div class="kpi">
+    <p class="metric-label">Avg. time to pay</p>
+    <p class="kpi-value">{% if kpis.avg_days is not none %}{{ "%.1f"|format(kpis.avg_days) }}<small> days</small>{% else %}&ndash;{% endif %}</p>
+    <p class="kpi-sub">Submit to paid, {{ kpis.paid_count }} claim{{ "s" if kpis.paid_count != 1 }}</p>
+  </div>
+  <div class="kpi">
+    <p class="metric-label">Rejection rate</p>
+    <p class="kpi-value">{% if kpis.reject_rate is not none %}{{ "%.0f"|format(kpis.reject_rate) }}<small>%</small>{% else %}&ndash;{% endif %}</p>
+    <p class="kpi-sub">Of {{ kpis.decisions }} final decision{{ "s" if kpis.decisions != 1 }}</p>
+  </div>
+</div>
+
+{# ---------- Trend + what needs doing ---------- #}
+<div class="dash-row dash-row-main">
+  <section class="panel" aria-labelledby="trend-title" data-cards>
+    <div class="panel-head">
+      <div><h2 id="trend-title" class="h3">Approved spend by month</h2><p class="panel-note">By expense date and category, last 6 months</p></div>
+      <p class="panel-figure"><span class="muted">Total</span> ৳&nbsp;{{ spend|taka(0) }}</p>
+    </div>
+    <div class="panel-body">
+      <ul class="chart-legend" aria-label="Categories">
+        {% for s in chart.stacked %}<li><span class="key" style="background: var(--s{{ s.slot }})"></span>{{ s.label }}</li>{% endfor %}
+      </ul>
+      <div class="chart-box"><canvas id="spend-chart" role="img" aria-label="Stacked column chart of approved spend per month by category. The table below has the values."></canvas></div>
+      <details class="table-toggle">
+        <summary>View as table</summary>
+        <div class="table-wrap">
+          <table class="data-table data-table-compact">
+            <thead><tr><th scope="col">Category</th>{% for m in chart.months %}<th scope="col" class="num">{{ m[:3] }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for s in chart.stacked %}<tr><th scope="row">{{ s.label }}</th>{% for v in s.data %}<td class="num">{{ v|taka(0) if v else "–" }}</td>{% endfor %}</tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="todo-title" data-cards>
+    <div class="panel-head">
+      <div><h2 id="todo-title" class="h3">Needs attention</h2><p class="panel-note">Oldest first</p></div>
+      <span class="count">{{ kpis.signoff_count + kpis.payable_count }}</span>
+    </div>
+    {% if attention %}
+    <ul class="todo">
+      {% for a in attention %}
+      {% set level = "critical" if a.age > 14 else ("serious" if a.age > 7 else "ok") %}
+      <li>
+        <a class="todo-link" href="{{ url_for('claims.detail', claim_id=a.claim.id) }}{{ '#review' if a.kind == 'Sign-off' }}">
+          <span class="todo-kind">{{ a.kind }}</span>
+          <span class="todo-main"><strong>{{ a.claim.title }}</strong><span>{{ a.claim.code }} · {{ a.claim.owner.name }}</span></span>
+          <span class="todo-side"><span class="mono">৳&nbsp;{{ a.claim.total|taka(0) }}</span><span class="age age-{{ level }}"><span class="age-dot" aria-hidden="true"></span>{{ a.age }} day{{ "s" if a.age != 1 }}</span></span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    <a class="panel-link" href="{{ url_for('main.workspace') }}">Open approvals &amp; payments &rarr;</a>
+    {% else %}
+    {{ empty("All clear. ", "Nothing is waiting on Finance.") }}
+    {% endif %}
+  </section>
+</div>
+
+{# ---------- Breakdown ---------- #}
+<div class="dash-row dash-row-3">
+  <section class="panel" aria-labelledby="cat-title" data-cards>
+    <div class="panel-head"><div><h2 id="cat-title" class="h3">Spend by category</h2><p class="panel-note">Approved and paid, all time</p></div></div>
+    <div class="panel-body">
+      {% if categories %}
+      <ul class="rank">
+        {% for name, amount in categories %}
+        {% set share = amount / spend * 100 %}
+        <li>
+          <div class="rank-label"><span><span class="key" style="background: var(--s{{ chart.categories[loop.index0].slot }})"></span>{{ name }}</span><span><span class="mono">৳&nbsp;{{ amount|taka(0) }}</span> <span class="muted">{{ "%.0f"|format(share) }}%</span></span></div>
+          <div class="rank-bar" aria-hidden="true"><span style="--w: {{ (amount / categories[0][1] * 100)|round(1) }}%; background: var(--s{{ chart.categories[loop.index0].slot }})"></span></div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}<p class="muted">Spend appears once claims are approved.</p>{% endif %}
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="aging-title" data-cards>
+    <div class="panel-head"><div><h2 id="aging-title" class="h3">Payables aging</h2><p class="panel-note">Days since final approval, unpaid</p></div><p class="panel-figure">৳&nbsp;{{ kpis.payable|taka(0) }}</p></div>
+    <div class="panel-body">
+      <div class="chart-box chart-box-sm"><canvas id="aging-chart" role="img" aria-label="Column chart of unpaid approved claims by age"></canvas></div>
+      <ul class="aging-list">
+        {% for a in aging %}<li><span class="key" style="background: var(--o{{ loop.index0 }})"></span><span>{{ a.label }}</span><span class="muted">{{ a.count }}</span><span class="mono">৳&nbsp;{{ a.total|taka(0) }}</span></li>{% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="pipe-title" data-cards>
+    <div class="panel-head"><div><h2 id="pipe-title" class="h3">Claim pipeline</h2><p class="panel-note">Value at each stage right now</p></div></div>
+    <div class="panel-body">
+      {% set top = pipeline|map(attribute="total")|max %}
+      <ul class="rank">
+        {% for p in pipeline %}
+        <li>
+          <div class="rank-label"><span>{{ p.label }} <span class="muted">· {{ p.count }}</span></span><span class="mono">৳&nbsp;{{ p.total|taka(0) }}</span></div>
+          <div class="rank-bar" aria-hidden="true"><span style="--w: {{ ((p.total / top * 100) if top else 0)|round(1) }}%"></span></div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</div>
+
+<div class="dash-row">
+  <section class="panel" aria-labelledby="people-title" data-cards>
+    <div class="panel-head"><div><h2 id="people-title" class="h3">Top claimants</h2><p class="panel-note">Approved and paid, all time</p></div></div>
+    {% if claimants %}
+    <div class="table-wrap">
+      <table class="data-table data-table-compact">
+        <thead><tr><th scope="col">Employee</th><th scope="col" class="num">Claims</th><th scope="col" class="num">Total (৳)</th><th scope="col">Share</th></tr></thead>
+        <tbody>
+          {% for o in claimants %}
+          <tr>
+            <td><span class="person"><span class="avatar avatar-xs">{{ o.user.initials }}</span>{{ o.user.name }}</span></td>
+            <td class="num">{{ o.count }}</td>
+            <td class="num">{{ o.total|taka(0) }}</td>
+            <td class="share-cell"><span class="share"><span style="--w: {{ (o.total / spend * 100)|round(1) }}%"></span></span><span class="muted">{{ "%.0f"|format(o.total / spend * 100) }}%</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}{{ empty("No approved claims yet. ", "Employees appear here once their claims are approved.") }}{% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="fx-title" data-cards>
+    <div class="panel-head"><div><h2 id="fx-title" class="h3">Currency mix</h2><p class="panel-note">Original currency of approved line items</p></div></div>
+    <div class="panel-body">
+      {% if currencies %}
+      <div class="seg-bar" aria-hidden="true">
+        {% for c in currencies %}<span style="flex: {{ c.base }}; background: var(--fx-{{ c.code }})"></span>{% endfor %}
+      </div>
+      <table class="data-table data-table-compact fx-table">
+        <thead><tr><th scope="col">Currency</th><th scope="col" class="num">Original</th><th scope="col" class="num">In Taka</th><th scope="col" class="num">Share</th></tr></thead>
+        <tbody>
+          {% for c in currencies %}
+          <tr>
+            <th scope="row"><span class="key" style="background: var(--fx-{{ c.code }})"></span>{{ c.code }}</th>
+            <td class="num">{{ c.original|taka(2) }}</td>
+            <td class="num">{{ c.base|taka(0) }}</td>
+            <td class="num">{{ "%.0f"|format(c.base / spend * 100) }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p class="panel-note fx-note">Rates: 1 USD = ৳122 · 1 EUR = ৳132</p>
+      {% else %}<p class="muted">Appears once claims are approved.</p>{% endif %}
+    </div>
+  </section>
+</div>
+
+{# ---------- Ledger ---------- #}
+<section class="panel panel-gap" aria-labelledby="ledger-title" data-cards>
+  <div class="panel-head panel-head-tools">
+    <div><h2 id="ledger-title" class="h3">Claims ledger</h2><p class="panel-note"><span data-table-count>{{ ledger|length }}</span> claims · ৳&nbsp;<span data-table-total>{{ ledger|sum(attribute="claim.total")|taka(0) }}</span></p></div>
+    <div class="table-tools">
+      <label class="sr-only" for="f-search">Search claims</label>
+      <input id="f-search" type="search" placeholder="Search claims" data-search>
+      <label class="sr-only" for="f-status">Status</label>
+      <select id="f-status" data-filter="status">
+        <option value="">All statuses</option>
+        {% for value, label in [("submitted", "In review"), ("approved", "Approved"), ("paid", "Paid"), ("rejected", "Rejected")] %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+      <label class="sr-only" for="f-category">Category</label>
+      <select id="f-category" data-filter="category">
+        <option value="">All categories</option>
+        {% for name, _ in categories %}<option>{{ name }}</option>{% endfor %}
+      </select>
+      <label class="sr-only" for="f-owner">Employee</label>
+      <select id="f-owner" data-filter="owner">
+        <option value="">All employees</option>
+        {% for name in owners %}<option>{{ name }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  {% if ledger %}
+  <div class="table-wrap">
+    <table class="data-table" data-sortable>
+      <thead>
+        <tr>
+          <th scope="col" aria-sort="none"><button type="button" data-sort="code">Claim</button></th>
+          <th scope="col" aria-sort="none"><button type="button" data-sort="owner">Employee</button></th>
+          <th scope="col" aria-sort="none"><button type="button" data-sort="category">Category</button></th>
+          <th scope="col" aria-sort="descending"><button type="button" data-sort="submitted">Submitted</button></th>
+          <th scope="col">Status</th>
+          <th scope="col" class="num" aria-sort="none"><button type="button" data-sort="total">Total (৳)</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in ledger %}
+        {% set c = row.claim %}
+        <tr class="is-link" data-status="{{ c.status }}" data-owner="{{ c.owner.name }}" data-category="{{ row.category }}"
+            data-code="{{ c.id }}" data-submitted="{{ row.submitted.isoformat() if row.submitted else '' }}" data-total="{{ c.total }}"
+            data-text="{{ (c.code ~ ' ' ~ c.title ~ ' ' ~ c.owner.name)|lower }}" data-label="{{ c.label }}">
+          <td><span class="claim-id">{{ c.code }}</span><a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a></td>
+          <td>{{ c.owner.name }}</td>
+          <td>{{ row.category }}</td>
+          <td class="nowrap">{{ row.submitted.strftime("%d %b %Y") if row.submitted else "–" }}</td>
+          <td>{{ badge(c) }}</td>
+          <td class="num">{{ c.total|taka }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted table-none" data-table-none hidden>No claims match these filters.</p>
+  </div>
+  {% else %}
+  {{ empty("No claims yet. ", "Claims appear here once employees submit them.") }}
+  {% endif %}
+</section>
+
+<script type="application/json" id="dash-data">{{ chart|tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous" defer></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}" defer></script>
+{% endblock %}

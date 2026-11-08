@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "_shapes.html" import decagon %}
+{% block title %}Get started · Claimora{% endblock %}
+
+{% block nav_action %}
+<a class="btn btn-ghost btn-sm" href="{{ url_for('main.index') }}">
+  <svg class="icon-back" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+  <span>Back to home</span>
+</a>
+{% endblock %}
+
+{% block content %}
+{% set roles = {
+  "employee": ("Claim it", "Create claims with receipts and follow each one until it's paid.",
+               ["Create, edit and delete drafts", "Attach a receipt to every line", "Submit, and resubmit if returned"],
+               '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>'),
+  "manager": ("Review it", "Work through the team's claims and decide each one in a step.",
+              ["See the team's claims, oldest first", "Approve, or return with a comment", "Never approve your own claim"],
+              '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>'),
+  "finance": ("Pay it", "Sign off high-value claims, record payments and watch spend.",
+              ["Second sign-off above ৳1,000", "Record each payment once sent", "Spend by month, category and person"],
+              '<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/>'),
+} %}
+{% set tick %}<svg class="tick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{% endset %}
+
+<section class="gs">
+  {{ decagon("dec-gs") }}
+  {{ decagon("dec-gs-left") }}
+  <div class="container gs-inner">
+    <header class="gs-head" data-intro>
+      <h1>Pick a role and <strong>follow a claim</strong> to payout</h1>
+      <p class="lp-lead">Each sample account opens its own workspace, already filled with claims. Come back here any time to switch roles.</p>
+      <ol class="gs-path" aria-label="Suggested order">
+        <li><span>1</span>Employee submits</li>
+        <li><span>2</span>Manager reviews</li>
+        <li><span>3</span>Finance pays</li>
+      </ol>
+    </header>
+
+    {% include "_signed_in_note.html" %}
+
+    <div class="gs-roles" data-cards>
+      {% for u in samples %}
+      {% set verb, summary, duties, icon = roles[u.role] %}
+      <article class="gs-card role-pick">
+        <div class="gs-card-top">
+          <span class="role-icon"><svg viewBox="0 0 24 24" aria-hidden="true">{{ icon|safe }}</svg></span>
+          <span class="gs-step">Step {{ loop.index }}</span>
+        </div>
+        <p class="gs-role">{{ u.role|capitalize }}</p>
+        <h2>{{ verb }}</h2>
+        <p class="gs-summary">{{ summary }}</p>
+
+        <div class="gs-person" aria-label="Sample {{ u.role }} account">
+          <span class="avatar">{{ u.initials }}</span>
+          <span><strong>{{ u.name }}</strong><span>{{ u.title }}</span><span class="mono">{{ u.email }}</span></span>
+        </div>
+
+        <ul class="ticks gs-duties">
+          {% for duty in duties %}<li>{{ tick|safe }}{{ duty }}</li>{% endfor %}
+        </ul>
+
+        <form method="post" action="{{ url_for('auth.get_started') }}" data-role-form>
+          <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="{{ u.role }}">
+          <button class="pill pill-block" type="submit">Continue as {{ u.role|capitalize }}
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </form>
+      </article>
+      {% else %}
+      <div class="gs-card">
+        <h2>No sample accounts</h2>
+        <p class="gs-summary"><a href="{{ url_for('auth.signup') }}">Create an account</a> to get started.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="gs-own" data-intro-tail>
+      <div>
+        <h2>Have your own account?</h2>
+        <p>Sign in with your email, or create an account and choose your role.</p>
+      </div>
+      <div class="gs-own-actions">
+        <a class="btn btn-ghost" href="{{ url_for('auth.login') }}">Sign in</a>
+        <a class="pill" href="{{ url_for('auth.signup') }}">Create an account</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
