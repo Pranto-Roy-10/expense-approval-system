@@ -74,9 +74,10 @@ def workspace():
             "returned": sum(1 for c in team_claims if c.owner_id == r.id and c.status == "rejected"),
             "paid": sum((c.total for c in team_claims if c.owner_id == r.id and c.status == "paid"), Decimal(0)),
         } for r in team]
+        month_start = utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         approved_month = [a.claim for a in AuditEntry.query.filter(AuditEntry.actor_id == user.id,
-                                                                   AuditEntry.action.like("Approved%"))
-                          if _this_month(a.created_at)]
+                                                                   AuditEntry.action.like("Approved%"),
+                                                                   AuditEntry.created_at >= month_start)]
         return render_template(
             "workspace/manager.html", queue=queue, decisions=decisions, members=members,
             oldest=queue[0].entered("submitted") if queue else None,
@@ -139,6 +140,11 @@ def approved_xlsx():
                      mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
+def _cell(text):
+    """Stop spreadsheet apps from running user text as a formula (CSV injection)."""
+    return "'" + text if text.startswith(("=", "+", "-", "@", "\t", "\r")) else text
+
+
 @bp.get("/dashboard/approved.csv")
 @login_required("finance")
 def approved_csv():
@@ -149,8 +155,8 @@ def approved_csv():
     writer.writerow(["Claim ID", "Title", "Employee", "Manager", "Main category", "Approved on", "Status", "Total (BDT)"])
     for c in claims:
         approved = c.entered("approved")
-        writer.writerow([c.code, c.title, c.owner.name, c.owner.manager.name if c.owner.manager else "",
-                         max(c.items, key=lambda i: i.base_amount).category if c.items else "",
+        writer.writerow([c.code, _cell(c.title), _cell(c.owner.name), _cell(c.owner.manager.name if c.owner.manager else ""),
+                         c.main_category,
                          approved.strftime("%Y-%m-%d") if approved else "", c.label, f"{c.total:.2f}"])
     # BOM so Excel opens the UTF-8 text (names, ৳) correctly
     return Response("﻿" + out.getvalue(), mimetype="text/csv", headers={
@@ -235,6 +241,12 @@ def profile_edit():
     db.session.commit()
     flash("Profile updated." + (" Your password has been changed." if new and not user.is_sample else ""), "success")
     return redirect(url_for("main.profile"))
+
+
+@bp.app_errorhandler(413)
+def too_large(_):
+    flash("Those receipts are too large together (30 MB at most per save). Attach fewer or smaller files.", "error")
+    return redirect(request.url)  # back to the same page (a GET), never to a URL the request supplied
 
 
 @bp.get("/api/health")
