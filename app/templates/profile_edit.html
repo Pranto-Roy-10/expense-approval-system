@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Edit profile · Claimora{% endblock %}
+
+{% macro error(name) %}{% if errors[name] %}<p class="field-error" id="{{ name }}-error">{{ errors[name] }}</p>{% endif %}{% endmacro %}
+{% macro invalid(name) %}{% if errors[name] %} aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}{% endmacro %}
+
+{% block content %}
+<section class="section section-tight">
+  <div class="container settings">
+    <a class="back-link" href="{{ url_for('main.profile') }}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>Profile
+    </a>
+    <header class="ws-head" data-intro>
+      <div>
+        <h1>Edit <strong>profile</strong></h1>
+        <p class="ws-sub">Changes apply as soon as you save.</p>
+      </div>
+    </header>
+
+    <form class="panel settings-form" method="post" novalidate data-cards>
+      <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+      {% if errors %}<p class="flash flash-error settings-alert" role="alert">Nothing was saved. Check the highlighted fields.</p>{% endif %}
+
+      <fieldset class="settings-row">
+        <legend class="settings-intro"><span class="h3">Personal information</span><span>Shown on your claims and to the people who review them.</span></legend>
+        <div class="settings-fields">
+          <div class="field">
+            <label for="name">Full name</label>
+            <input id="name" name="name" autocomplete="name" required maxlength="120" value="{{ form.get('name', '') }}"{{ invalid('name') }}>
+            {{ error('name') }}
+          </div>
+          <div class="field">
+            <label for="email">Work email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required value="{{ form.get('email', '') }}"{{ invalid('email') }}>
+            <p class="field-hint">{{ "You sign in with this address." if not user.is_sample else "Used to identify you in Claimora." }}</p>
+            {{ error('email') }}
+          </div>
+          <div class="field">
+            <label for="title">Job title <span class="optional">Optional</span></label>
+            <input id="title" name="title" autocomplete="organization-title" maxlength="120" value="{{ form.get('title', '') }}"{{ invalid('title') }}>
+            {{ error('title') }}
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="settings-row">
+        <legend class="settings-intro"><span class="h3">Reporting</span><span>Your role is set when the account is created.</span></legend>
+        <div class="settings-fields">
+          <div class="field">
+            <span class="label">Role</span>
+            <p class="readonly">{{ user.role|capitalize }}</p>
+          </div>
+          {% if user.role == "employee" %}
+          <div class="field">
+            <label for="manager_id">Manager</label>
+            <select id="manager_id" name="manager_id"{{ invalid('manager_id') }}>
+              <option value="">Choose a manager</option>
+              {% for m in managers %}<option value="{{ m.id }}" {% if form.get('manager_id') == m.id|string %}selected{% endif %}>{{ m.name }}{% if m.title %} · {{ m.title }}{% endif %}</option>{% endfor %}
+            </select>
+            <p class="field-hint">Claims you submit from now on go to this person.</p>
+            {{ error('manager_id') }}
+          </div>
+          {% else %}
+          <div class="field">
+            <span class="label">Manager</span>
+            <p class="readonly">{{ user.manager.name if user.manager else "None" }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </fieldset>
+
+      <fieldset class="settings-row">
+        <legend class="settings-intro"><span class="h3">Password</span><span>Leave blank to keep your current password.</span></legend>
+        <div class="settings-fields">
+          {% if user.is_sample %}
+          <p class="readonly">Sample accounts sign in from the Get started page and have no password.</p>
+          {% else %}
+          <div class="field">
+            <label for="current_password">Current password</label>
+            <input id="current_password" name="current_password" type="password" autocomplete="current-password"{{ invalid('current_password') }}>
+            {{ error('current_password') }}
+          </div>
+          <div class="field">
+            <label for="new_password">New password</label>
+            <input id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="8"{{ invalid('new_password') }}>
+            <p class="field-hint">At least 8 characters.</p>
+            {{ error('new_password') }}
+          </div>
+          <div class="field">
+            <label for="confirm_password">Confirm new password</label>
+            <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password"{{ invalid('confirm_password') }}>
+            {{ error('confirm_password') }}
+          </div>
+          {% endif %}
+        </div>
+      </fieldset>
+
+      <div class="settings-actions">
+        <a class="btn btn-ghost" href="{{ url_for('main.profile') }}">Cancel</a>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

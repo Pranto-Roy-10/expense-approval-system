@@ -1,0 +1,90 @@
+{% extends "workspace/_layout.html" %}
+{% from "_macros.html" import badge, metric, empty with context %}
+{% block title %}Review queue · Claimora{% endblock %}
+{% block heading %}Review <strong>queue</strong>{% endblock %}
+{% block lead %}Claims from your team, oldest first. Approved claims over ৳1,000 go on to Finance; the rest are ready to pay.{% endblock %}
+
+{% block workspace %}
+<div class="metrics" data-cards>
+  {{ metric("Waiting for you", queue|length, ("Oldest submitted " ~ (oldest|ago) ~ (" ago" if oldest|ago != "today" else "")) if oldest else "Nothing waiting") }}
+  {{ metric("Over ৳1,000", queue|selectattr("total", "gt", 1000)|list|length, "Will also need Finance sign-off") }}
+  {{ metric("Approved this month", approved_count, "Claims you approved") }}
+  {{ metric("Approved value", approved_total, "This month", money=True) }}
+</div>
+
+<section class="panel ws-section" aria-labelledby="queue-title" data-cards>
+  <div class="panel-head"><h2 id="queue-title" class="h3">Waiting for your review</h2><span class="count">{{ queue|length }}</span></div>
+  {% if queue %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th scope="col">Claim</th><th scope="col">Employee</th><th scope="col">Waiting</th><th scope="col">Receipts</th><th scope="col" class="num">Total (৳)</th><th scope="col"><span class="sr-only">Action</span></th></tr>
+      </thead>
+      <tbody>
+        {% for c in queue %}
+        {% set meals = c.items|selectattr("category", "eq", "Meals")|list %}
+        <tr>
+          <td>
+            <a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a>
+            <span class="cell-sub">{{ c.code }} · {{ c.items|length }} item{{ "s" if c.items|length != 1 }}{% if meals %} · includes meals{% endif %}</span>
+          </td>
+          <td><span class="person"><span class="avatar avatar-xs">{{ c.owner.initials }}</span>{{ c.owner.name }}</span></td>
+          <td class="nowrap">{{ c.entered("submitted")|ago }}</td>
+          <td class="nowrap">{% if c.receipts == c.items|length %}<span class="tick">All {{ c.receipts }}</span>{% else %}<span class="warn-text">{{ c.receipts }} of {{ c.items|length }}</span>{% endif %}</td>
+          <td class="num">{{ c.total|taka }}{% if c.total > 1000 %}<span class="cell-sub">Needs Finance</span>{% endif %}</td>
+          <td class="cell-action"><a class="btn btn-primary btn-sm" href="{{ url_for('claims.detail', claim_id=c.id) }}#review">Review</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ empty("All caught up. ", "New claims from your team will appear here.") }}
+  {% endif %}
+</section>
+
+<div class="ws-split">
+  <section class="panel" aria-labelledby="team-title" data-cards>
+    <div class="panel-head"><h2 id="team-title" class="h3">Your team</h2><span class="count">{{ members|length }}</span></div>
+    {% if members %}
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr><th scope="col">Member</th><th scope="col" class="num">In review</th><th scope="col" class="num">Returned</th><th scope="col" class="num">Paid (৳)</th></tr></thead>
+        <tbody>
+          {% for m in members %}
+          <tr>
+            <td><span class="person"><span class="avatar avatar-xs">{{ m.user.initials }}</span><span>{{ m.user.name }}<span class="cell-sub">{{ m.user.title or "Employee" }}</span></span></span></td>
+            <td class="num">{{ m.in_review or "–" }}</td>
+            <td class="num">{{ m.returned or "–" }}</td>
+            <td class="num">{{ m.paid|taka(0) if m.paid else "–" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    {{ empty("No team members yet. ", "Employees who choose you as their manager appear here.") }}
+    {% endif %}
+  </section>
+
+  <section class="panel" aria-labelledby="decisions-title" data-cards>
+    <div class="panel-head"><h2 id="decisions-title" class="h3">Your recent decisions</h2></div>
+    {% if decisions %}
+    <ul class="decision-list">
+      {% for d in decisions %}
+      <li>
+        <span class="badge badge-{{ 'rejected' if d.to_status == 'rejected' else 'approved' }}">{{ "Returned" if d.to_status == "rejected" else "Approved" }}</span>
+        <span class="decision-main">
+          <a class="plain-link" href="{{ url_for('claims.detail', claim_id=d.claim_id) }}">{{ d.claim.title }}</a>
+          <span class="cell-sub">{{ d.claim.owner.name }} · {{ d.created_at.strftime("%d %b %Y") }}{% if d.to_status == "submitted" %} · sent to Finance{% endif %}</span>
+        </span>
+        <span class="mono decision-amount">{{ d.claim.total|taka(0) }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    {{ empty("No decisions yet. ", "Claims you approve or return are listed here.") }}
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
