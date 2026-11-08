@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_shapes.html" import decagon %}
+{% block title %}Sign in · Claimora{% endblock %}
+{% block nav_action %}<a class="btn btn-ghost btn-sm" href="{{ url_for('auth.signup') }}">Create account</a>{% endblock %}
+
+{% block content %}
+<section class="section section-tight auth-section">
+  {{ decagon("dec-auth") }}
+  <div class="container auth-split">
+  <div class="auth-wrap">
+    <header class="section-head" data-intro>
+      <h1>Welcome <strong>back</strong></h1>
+      <p class="lead">Sign in with the email and password you used to create your account.</p>
+    </header>
+    {% include "_signed_in_note.html" %}
+    <div data-cards>
+      <form class="panel form-card" method="post" novalidate>
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="email">Work email</label>
+          <input id="email" name="email" type="email" autocomplete="email" required value="{{ email }}">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+        <p class="form-foot">No account yet? <a href="{{ url_for('auth.signup') }}">Create one</a> or use a <a href="{{ url_for('auth.get_started') }}">sample account</a>.</p>
+      </form>
+    </div>
+  </div>
+  {% include "_auth_aside.html" %}
+  </div>
+</section>
+{% endblock %}
