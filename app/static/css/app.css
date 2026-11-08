@@ -59,10 +59,7 @@
 .back-link { display: inline-flex; align-items: center; gap: .4rem; margin-bottom: 1.5rem; color: var(--muted); text-decoration: none; font-weight: 500; font-size: .9375rem; }
 .back-link svg { width: 1rem; height: 1rem; }
 .back-link:hover { color: var(--text); }
-.flashes { display: grid; gap: .5rem; padding-top: 1.25rem; }
 .flash { margin: 0 0 1rem; padding: .8rem 1rem; border-radius: var(--radius-sm); font-weight: 500; font-size: .9375rem; }
-.flashes .flash { margin: 0; }
-.flash-success { color: var(--approved-fg); background: var(--approved-bg); }
 .flash-error { color: var(--rejected-fg); background: var(--rejected-bg); }
 .flash-info { margin: -1.5rem 0 1.5rem; color: var(--text); background: var(--surface); border: 1px solid var(--border); font-weight: 400; }
 .empty { display: flex; gap: 1rem; align-items: flex-start; padding: 2rem 1.5rem; color: var(--muted); }
@@ -558,4 +555,38 @@ dt { font-size: .8125rem; color: var(--muted); }
   .auth-aside-inner { padding: 1.75rem 1rem 1.25rem; }
   .auth-card { padding: 1.1rem; }
   .auth-toast { position: relative; right: auto; bottom: auto; margin-top: .75rem; }  /* below the card, not over it */
+}
+
+/* ---------- Toast notifications ---------- */
+/* Server messages slide in at the top right and leave on their own; the timer bar is the countdown,
+   and hovering or focusing a toast pauses it (site.js removes the toast when the bar finishes). */
+.toasts { position: fixed; z-index: 60; top: 1rem; right: 1rem; display: grid; gap: .625rem; width: min(24rem, calc(100vw - 2rem)); pointer-events: none; }
+.toast { --accent: var(--ok); --life: 6s; position: relative; display: flex; align-items: flex-start; gap: .75rem; padding: .875rem .75rem .95rem 1rem; overflow: hidden;
+  background: var(--surface); color: var(--text); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg); pointer-events: auto; animation: toast-in .5s cubic-bezier(.16, 1, .3, 1) both; }
+.toast:nth-child(2) { animation-delay: .08s; }
+.toast:nth-child(3) { animation-delay: .16s; }
+.toast-error { --accent: var(--rejected-fg); --life: 9s; }
+.toast p { flex: 1; margin: .0625rem 0 0; font-size: .9375rem; font-weight: 500; line-height: 1.45; }
+.toast-icon { flex-shrink: 0; width: 1.25rem; height: 1.25rem; fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.toast-close { flex-shrink: 0; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; margin: -.25rem -.125rem 0 0; padding: 0; border: 0; border-radius: .375rem;
+  background: none; color: var(--muted); cursor: pointer; transition: background-color .2s, color .2s; }
+.toast-close:hover, .toast-close:focus-visible { background: var(--surface-2); color: var(--text); }
+.toast-close svg { width: 1rem; height: 1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.toast-timer { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); opacity: .35; transform-origin: left;
+  animation: toast-timer var(--life) linear .5s forwards; }
+.toast:hover .toast-timer, .toast:focus-within .toast-timer { animation-play-state: paused; }
+.toast.is-leaving { animation: toast-out .35s cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(1.5rem) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateX(1.5rem) scale(.96); } }
+@keyframes toast-timer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@media (max-width: 639px) {
+  .toasts { top: auto; bottom: 1rem; right: 1rem; left: 1rem; width: auto; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(1rem) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes toast-out { to { opacity: 0; transform: translateY(1rem) scale(.98); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast, .toast.is-leaving { animation-name: toast-fade; animation-duration: .2s; }
+  .toast.is-leaving { animation-direction: reverse; }
+  @keyframes toast-fade { from { opacity: 0; } to { opacity: 1; } }
 }

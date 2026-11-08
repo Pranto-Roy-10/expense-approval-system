@@ -7,7 +7,7 @@ from app.models import Claim, User, utcnow
 from app.dashboard import finance_overview
 from app.routes import taka
 
-from .conftest import CSRF, post, sign_in
+from .conftest import post, sign_in
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"\0" * 64
 PDF = b"%PDF-1.4\n%test\n"
