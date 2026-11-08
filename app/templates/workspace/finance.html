@@ -1,0 +1,96 @@
+{% extends "workspace/_layout.html" %}
+{% from "_macros.html" import badge, metric, empty, csrf with context %}
+{% block title %}Approvals & payments · Claimora{% endblock %}
+{% block heading %}Approvals &amp; <strong>payments</strong>{% endblock %}
+{% block lead %}Sign off manager-approved claims over ৳1,000, then record each payment once the money has been sent.{% endblock %}
+{% block actions %}
+<a class="btn btn-ghost" href="{{ url_for('main.dashboard') }}">View spend overview</a>
+{% endblock %}
+
+{% block workspace %}
+{% set to_pay = payments|sum(attribute="total") %}
+<div class="metrics" data-cards>
+  {{ metric("Awaiting your sign-off", approvals|length, "৳ " ~ approvals|sum(attribute="total")|taka(0) ~ " in total") }}
+  {{ metric("Ready to pay", to_pay, payments|length ~ " claim" ~ ("s" if payments|length != 1 else ""), money=True) }}
+  {{ metric("Oldest unpaid", (payments[0].entered("approved")|ago) if payments else "–", "Since final approval" if payments else "Nothing to pay") }}
+  {{ metric("Paid this month", paid_month, paid_month_count ~ " payment" ~ ("s" if paid_month_count != 1 else ""), money=True) }}
+</div>
+
+<section class="panel ws-section" aria-labelledby="approvals-title" data-cards>
+  <div class="panel-head"><h2 id="approvals-title" class="h3">Awaiting your sign-off</h2><span class="count">{{ approvals|length }}</span></div>
+  {% if approvals %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th scope="col">Claim</th><th scope="col">Employee</th><th scope="col">Waiting</th><th scope="col">Receipts</th><th scope="col" class="num">Total (৳)</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
+      <tbody>
+        {% for c in approvals %}
+        <tr>
+          <td><a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a><span class="cell-sub">{{ c.code }} · {{ c.items|length }} item{{ "s" if c.items|length != 1 }}</span></td>
+          <td><span class="person"><span class="avatar avatar-xs">{{ c.owner.initials }}</span><span>{{ c.owner.name }}<span class="cell-sub">Approved by {{ c.owner.manager.name if c.owner.manager else "manager" }}</span></span></span></td>
+          <td class="nowrap">{{ c.manager_approved_at|ago }}</td>
+          <td class="nowrap">{% if c.receipts == c.items|length %}<span class="tick">All {{ c.receipts }}</span>{% else %}<span class="warn-text">{{ c.receipts }} of {{ c.items|length }}</span>{% endif %}</td>
+          <td class="num">{{ c.total|taka }}</td>
+          <td class="cell-action"><a class="btn btn-primary btn-sm" href="{{ url_for('claims.detail', claim_id=c.id) }}#review">Review</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ empty("Nothing to sign off. ", "Claims over ৳1,000 arrive here after their manager approves them.") }}
+  {% endif %}
+</section>
+
+<section class="panel ws-section" aria-labelledby="payments-title" data-cards>
+  <div class="panel-head"><h2 id="payments-title" class="h3">Ready for payment</h2><span class="count">{{ payments|length }}</span></div>
+  {% if payments %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th scope="col">Claim</th><th scope="col">Employee</th><th scope="col">Approved</th><th scope="col">Waiting</th><th scope="col" class="num">Total (৳)</th><th scope="col"><span class="sr-only">Action</span></th></tr></thead>
+      <tbody>
+        {% for c in payments %}
+        <tr>
+          <td><a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a><span class="cell-sub">{{ c.code }}</span></td>
+          <td><span class="person"><span class="avatar avatar-xs">{{ c.owner.initials }}</span>{{ c.owner.name }}</span></td>
+          <td class="nowrap">{{ c.entered("approved").strftime("%d %b %Y") }}</td>
+          <td class="nowrap">{{ c.entered("approved")|ago }}</td>
+          <td class="num">{{ c.total|taka }}</td>
+          <td class="cell-action">
+            <form method="post" action="{{ url_for('claims.pay', claim_id=c.id) }}" data-confirm="Record the payment of ৳ {{ c.total|taka }} to {{ c.owner.name }}?">
+              {{ csrf() }}<button class="btn btn-primary btn-sm" type="submit">Mark as paid</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr><th scope="row" colspan="4">Total to pay</th><td class="num">{{ to_pay|taka }}</td><td></td></tr></tfoot>
+    </table>
+  </div>
+  {% else %}
+  {{ empty("No payments due. ", "Approved claims wait here until you record the payment.") }}
+  {% endif %}
+</section>
+
+<section class="panel ws-section" aria-labelledby="paid-title" data-cards>
+  <div class="panel-head"><h2 id="paid-title" class="h3">Recently paid</h2></div>
+  {% if paid %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th scope="col">Claim</th><th scope="col">Employee</th><th scope="col">Paid on</th><th scope="col" class="num">Total (৳)</th></tr></thead>
+      <tbody>
+        {% for c in paid %}
+        <tr class="is-link">
+          <td><a class="row-link" href="{{ url_for('claims.detail', claim_id=c.id) }}">{{ c.title }}</a><span class="cell-sub">{{ c.code }}</span></td>
+          <td>{{ c.owner.name }}</td>
+          <td class="nowrap">{{ c.entered("paid").strftime("%d %b %Y") }}</td>
+          <td class="num">{{ c.total|taka }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {{ empty("Nothing paid yet. ", "Claims you mark as paid are listed here.") }}
+  {% endif %}
+</section>
+{% endblock %}
