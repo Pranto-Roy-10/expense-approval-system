@@ -28,8 +28,7 @@ def create_app(config_class=Config):
     app.register_blueprint(routes.bp)
 
     with app.app_context():
-        from . import models  # noqa: F401  (registers the tables)
-        db.create_all()
+        db.create_all()  # the blueprints above already imported the models, so every table is known
         if app.config["SEED_SAMPLE_DATA"]:
             from .seed import seed_if_empty
             seed_if_empty()

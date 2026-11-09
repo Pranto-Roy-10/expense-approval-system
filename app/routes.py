@@ -41,8 +41,6 @@ def index():
 @bp.app_template_filter("ago")
 def ago(moment):
     """Whole days since a moment: 'today', '1 day', '12 days'."""
-    if moment is None:
-        return "–"
     days = (utcnow() - moment).days
     return "today" if days < 1 else f"{days} day{'s' if days != 1 else ''}"
 

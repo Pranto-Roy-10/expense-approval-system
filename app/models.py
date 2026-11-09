@@ -79,7 +79,7 @@ class Claim(db.Model):
         if self.status == "submitted":
             if self.awaiting_finance:
                 return "With Finance"
-            return f"With {self.owner.manager.name}" if self.owner.manager else "With manager"
+            return f"With {self.owner.manager.name}"  # submitting requires a manager
         return {"draft": "Not submitted", "rejected": "Returned to you", "approved": "Payment pending",
                 "paid": "Paid"}[self.status]
 
