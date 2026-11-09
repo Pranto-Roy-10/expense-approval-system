@@ -17,7 +17,7 @@ Claimora is a web app for expense claims and their approval. Employees create cl
   - Sign off on manager-approved claims over ৳1,000.
   - Mark approved claims as paid.
   - Use a spend dashboard with filters and charts.
-  - Export to a branded Excel workbook (`.xlsx`) or CSV.
+  - Export to a branded Excel workbook (`.xlsx`) or CSV, for this month, the last 3 or 12 months, or all time.
 - **Audit trail**: every claim records who did what, when, the status before and after, and the comment.
 - **Interface**
   - Amounts in Taka (৳) with lakh/crore grouping.
@@ -99,7 +99,7 @@ Values can also be placed in a `.env` file at the project root.
 python -m pytest -q
 ```
 
-There are 96 tests, covering 100% of the code:
+There are 97 tests, covering 100% of the code:
 
 - `tests/test_rules.py` covers every business rule.
 - `tests/test_flows.py` runs full journeys through the HTTP layer: create, submit, review, reject and resubmit, pay, permissions, CSRF, receipts and exports.

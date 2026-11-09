@@ -20,7 +20,7 @@ The tests use an in-memory database, so they never touch real data. GitHub Actio
 
 ## Coverage
 
-**100%**, with 96 tests passing. Every business rule in the brief has its own unit tests in `tests/test_rules.py`, and `test_full_claim_lifecycle` takes one claim through every status: submitted, rejected, resubmitted, approved by the manager and Finance, and paid.
+**100%**, with 97 tests passing. Every business rule in the brief has its own unit tests in `tests/test_rules.py`, and `test_full_claim_lifecycle` takes one claim through every status: submitted, rejected, resubmitted, approved by the manager and Finance, and paid.
 
 ## Edge cases tested
 
