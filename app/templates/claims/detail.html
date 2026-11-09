@@ -22,7 +22,7 @@
       {% if mine and claim.editable %}
       <div class="head-actions">
         {% if claim.status == "draft" %}
-        <form method="post" action="{{ url_for('claims.delete', claim_id=claim.id) }}" data-confirm="Delete {{ claim.code }}? This can't be undone.">
+        <form method="post" action="{{ url_for('claims.delete', claim_id=claim.id) }}" data-confirm="The draft and its receipts will be removed. This can't be undone." data-confirm-title="Delete {{ claim.code }}?" data-confirm-ok="Delete draft" data-confirm-tone="danger">
           {{ csrf() }}<button class="btn btn-ghost" type="submit">Delete</button>
         </form>
         {% endif %}
@@ -111,7 +111,7 @@
         {% if g.user.role == "finance" and claim.status == "approved" %}
         <section class="panel" aria-labelledby="pay-title" data-cards>
           <div class="panel-head"><h2 id="pay-title" class="h3">Payment</h2></div>
-          <form class="panel-body" method="post" action="{{ url_for('claims.pay', claim_id=claim.id) }}">
+          <form class="panel-body" method="post" action="{{ url_for('claims.pay', claim_id=claim.id) }}" data-confirm="Record this payment only once the money has been sent. It can't be undone." data-confirm-title="Confirm payment" data-confirm-ok="Confirm payment" data-confirm-employee="{{ claim.owner.name }}" data-confirm-amount="৳ {{ claim.total|taka }}" data-confirm-claim="{{ claim.code }} · {{ claim.title }}">
             {{ csrf() }}
             <p class="muted">Approved and ready to pay ৳&nbsp;{{ claim.total|taka }} to {{ claim.owner.name }}.</p>
             <button class="btn btn-primary btn-block" type="submit">Mark as paid</button>

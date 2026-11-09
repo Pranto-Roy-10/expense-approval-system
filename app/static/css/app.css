@@ -590,3 +590,32 @@ dt { font-size: .8125rem; color: var(--muted); }
   .toast.is-leaving { animation-direction: reverse; }
   @keyframes toast-fade { from { opacity: 0; } to { opacity: 1; } }
 }
+
+/* ---------- Confirmation dialog (shared, filled by forms.js from the form's data-confirm-* attributes) ---------- */
+.confirm { width: min(26rem, calc(100vw - 2rem)); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-lg); animation: confirm-in .32s cubic-bezier(.16, 1, .3, 1); }
+.confirm::backdrop { background: rgb(14 13 11 / .55); backdrop-filter: blur(2px); animation: confirm-fade .25s ease-out; }
+.confirm.is-closing { animation: confirm-out .18s ease-in forwards; }
+.confirm.is-closing::backdrop { animation: confirm-fade .18s ease-in reverse forwards; }
+.confirm-card { display: grid; gap: 1rem; padding: 1.5rem; }
+.confirm-icon { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%; background: var(--brand-soft, rgb(245 165 36 / .15)); color: var(--brand-text); }
+.confirm-icon svg { width: 1.375rem; height: 1.375rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.confirm.is-danger .confirm-icon { background: var(--rejected-bg); color: var(--rejected-fg); }
+.confirm-title { margin: 0; font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
+.confirm-text { margin: 0; color: var(--muted); font-size: .9375rem; line-height: 1.5; }
+.confirm-details[hidden] { display: none; }
+.confirm-details { display: grid; margin: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.confirm-details > div { display: flex; justify-content: space-between; gap: 1rem; padding: .7rem 1rem; }
+.confirm-details > div + div { border-top: 1px solid var(--border); }
+.confirm-details dt { color: var(--muted); font-size: .875rem; }
+.confirm-details dd { margin: 0; font-weight: 600; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.confirm-amount dd { font-family: var(--mono); font-size: 1.125rem; color: var(--text); }
+.confirm-actions { display: flex; justify-content: flex-end; gap: .625rem; margin-top: .25rem; }
+.confirm.is-danger [data-confirm-ok] { background: var(--rejected-fg); color: #fff; }
+.confirm.is-danger [data-confirm-ok]:hover { filter: brightness(1.1); }
+:root[data-theme="dark"] .confirm.is-danger [data-confirm-ok] { color: #1a1815; }
+@media (max-width: 479px) { .confirm-actions { flex-direction: column-reverse; } .confirm-actions .btn { width: 100%; } }
+@keyframes confirm-in { from { opacity: 0; transform: translateY(.75rem) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes confirm-out { to { opacity: 0; transform: translateY(.5rem) scale(.97); } }
+@keyframes confirm-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .confirm, .confirm::backdrop { animation: none; } }

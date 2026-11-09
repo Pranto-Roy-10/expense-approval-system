@@ -1,9 +1,10 @@
 import os
+import secrets
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 
-from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_from_directory, url_for
+from flask import Blueprint, abort, current_app, flash, g, redirect, render_template, request, send_from_directory, session, url_for
 from sqlalchemy.orm.exc import StaleDataError
 from werkzeug.utils import secure_filename
 
@@ -11,6 +12,7 @@ from . import rules
 from .auth import login_required
 from .extensions import db
 from .models import CATEGORIES, RATES, Claim, LineItem
+from .routes import taka
 from .rules import RuleError
 
 bp = Blueprint("claims", __name__, url_prefix="/claims")
@@ -146,7 +148,10 @@ def _render_form(claim, rows, error=None):
         error += " Nothing was saved, so attach your new receipts again."  # browsers can't refill file inputs
     return render_template("claims/form.html", claim=claim, rows=rows, error=error,
                            title=request.form.get("title", claim.title or ""),
-                           categories=CATEGORIES, currencies=RATES), (400 if error else 200)
+                           categories=CATEGORIES, currencies=RATES,
+                           # a new claim's form carries a one-time token, so sending the same form twice can't make two claims
+                           form_token=None if claim.id else (request.form.get("form_token") or secrets.token_urlsafe(16))
+                           ), (400 if error else 200)
 
 
 def _after_save(claim, stale):
@@ -175,12 +180,21 @@ def _after_save(claim, stale):
 def new():
     claim = Claim(owner_id=g.user.id)  # added to the session only once it is valid
     if request.method == "POST":
+        # the Back button can bring the filled form back; sending it again opens the claim it already made
+        saved = session.get("saved_forms", {})
+        earlier = db.session.get(Claim, saved.get(request.form.get("form_token", ""), 0))
+        if earlier and earlier.owner_id == g.user.id:
+            flash(f"This form was already sent as {earlier.code}, so no copy was made.", "error")
+            return redirect(url_for("claims.edit" if earlier.editable else "claims.detail", claim_id=earlier.id))
         error, rows, stale = _save(claim)
         if error:
             return _render_form(claim, rows, error)
         db.session.add(claim)
         rules.record_created(claim, g.user)
         db.session.flush()  # assigns the claim number used in the message
+        if request.form.get("form_token"):
+            saved[request.form["form_token"]] = claim.id
+            session["saved_forms"] = dict(list(saved.items())[-20:])  # the last 20 forms are plenty
         return _after_save(claim, stale)
     blank = {"key": "n0", "id": "", "date": date.today().isoformat(), "category": "", "description": "",
              "amount": "", "currency": "BDT", "note": "", "remove_receipt": False, "upload": None, "receipt_name": ""}
@@ -240,7 +254,7 @@ def _transition(claim_id, action, success):
         db.session.rollback()
         flash("This claim was just changed by someone else. Check it and try again.", "error")
         return redirect(url_for("claims.detail", claim_id=claim_id))
-    flash(success.format(code=claim.code, label=claim.label.lower()), "success")
+    flash(success.format(code=claim.code, label=claim.label.lower(), owner=claim.owner.name, total=taka(claim.total)), "success")
     return redirect(url_for("main.workspace") if g.user.role != "employee" else url_for("claims.detail", claim_id=claim_id))
 
 
@@ -265,7 +279,7 @@ def reject(claim_id):
 @bp.post("/<int:claim_id>/pay")
 @login_required("finance")
 def pay(claim_id):
-    return _transition(claim_id, lambda c: rules.mark_paid(c, g.user), "{code} marked as paid.")
+    return _transition(claim_id, lambda c: rules.mark_paid(c, g.user), "Payment of ৳ {total} to {owner} recorded. {code} is now paid.")
 
 
 @bp.get("/receipts/<int:item_id>")

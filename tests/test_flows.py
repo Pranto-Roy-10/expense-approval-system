@@ -264,9 +264,11 @@ def test_full_claim_lifecycle(client, team):
     sign_in(client, team["finance"])
     assert b"Client workshop" in client.get("/workspace").data
     post(client, f"/claims/{claim.id}/approve")
-    post(client, f"/claims/{claim.id}/pay")
+    res = post(client, f"/claims/{claim.id}/pay", follow_redirects=True)
     db.session.expire_all()
     assert claim.status == "paid"
+    toast = f"Payment of ৳ {taka(claim.total)} to Nusrat Jahan recorded. {claim.code} is now paid."
+    assert toast in res.get_data(as_text=True) and 'class="toast toast-success"' in res.get_data(as_text=True)
 
     # The audit trail shows every step, and the employee sees the final state
     assert [e.action for e in reversed(claim.audit)] == [
@@ -424,3 +426,19 @@ def test_ledger_shows_the_newest_claims_and_says_how_many_are_left_out(monkeypat
     page = client.get("/dashboard").data
     assert b"1 older ones are left out" in page and b"data-capped" in page
     assert b"Newer claim" in page and b"Older claim" not in page
+
+
+def test_sending_the_same_new_claim_form_twice_makes_one_claim(client, team):
+    # the Back button brings the filled form back with its token; a second Submit must not copy the claim
+    sign_in(client, team["employee"])
+    form = claim_form(action="submit")
+    form["form_token"] = "back-button-token"
+    first = post(client, "/claims/new", dict(form), content_type="multipart/form-data")
+    again = post(client, "/claims/new", dict(form), content_type="multipart/form-data", follow_redirects=True)
+    assert Claim.query.count() == 1
+    claim = Claim.query.one()
+    assert first.headers["Location"].endswith(f"/claims/{claim.id}")
+    assert f"already sent as {claim.code}".encode() in again.data
+    form["form_token"] = "a-fresh-form"
+    post(client, "/claims/new", dict(form), content_type="multipart/form-data")
+    assert Claim.query.count() == 2  # a new form is a new claim

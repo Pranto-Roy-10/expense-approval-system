@@ -87,6 +87,7 @@
     <form class="claim-layout" method="post" enctype="multipart/form-data" novalidate data-claim-form
           data-rates='{{ currencies|tojson }}'>
       {{ csrf() }}
+      {% if form_token %}<input type="hidden" name="form_token" value="{{ form_token }}">{% endif %}
       <div class="claim-main">
         <section class="panel" aria-labelledby="details-title" data-cards>
           <div class="panel-head"><h2 id="details-title" class="h3">Claim details</h2></div>

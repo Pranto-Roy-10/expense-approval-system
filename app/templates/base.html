@@ -68,6 +68,23 @@
   {% endif %}
   {% endwith %}
 
+  <dialog class="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-text" data-confirm-dialog>
+    <form method="dialog" class="confirm-card">
+      <span class="confirm-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 8v5M12 16.5h.01"/><circle cx="12" cy="12" r="9"/></svg></span>
+      <h2 id="confirm-title" class="confirm-title" data-confirm-title>Are you sure?</h2>
+      <dl class="confirm-details" data-confirm-details hidden>
+        <div><dt>Employee</dt><dd data-confirm-employee></dd></div>
+        <div><dt>Claim</dt><dd data-confirm-claim></dd></div>
+        <div class="confirm-amount"><dt>Amount</dt><dd data-confirm-amount></dd></div>
+      </dl>
+      <p id="confirm-text" class="confirm-text" data-confirm-text></p>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" value="cancel" data-confirm-cancel>Cancel</button>
+        <button class="btn btn-primary" value="ok" data-confirm-ok>Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
   {% if not shell %}
   <footer class="site-footer lp-footer">
     <div class="container footer-inner">

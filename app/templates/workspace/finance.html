@@ -56,7 +56,7 @@
           <td class="nowrap">{{ c.entered("approved")|ago }}</td>
           <td class="num">{{ c.total|taka }}</td>
           <td class="cell-action">
-            <form method="post" action="{{ url_for('claims.pay', claim_id=c.id) }}" data-confirm="Record the payment of ৳ {{ c.total|taka }} to {{ c.owner.name }}?">
+            <form method="post" action="{{ url_for('claims.pay', claim_id=c.id) }}" data-confirm="Record this payment only once the money has been sent. It can't be undone." data-confirm-title="Confirm payment" data-confirm-ok="Confirm payment" data-confirm-employee="{{ c.owner.name }}" data-confirm-amount="৳ {{ c.total|taka }}" data-confirm-claim="{{ c.code }} · {{ c.title }}">
               {{ csrf() }}<button class="btn btn-primary btn-sm" type="submit">Mark as paid</button>
             </form>
           </td>

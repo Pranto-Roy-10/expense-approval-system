@@ -132,11 +132,53 @@
   });
 
   // ---------- Confirmations and required comments ----------
-  document.querySelectorAll("form[data-confirm]").forEach(function (f) {
-    f.addEventListener("submit", function (e) {
-      if (!confirm(f.dataset.confirm)) e.preventDefault();
+  // A form with data-confirm opens the themed dialog in base.html first; it is sent only after "Confirm".
+  var ask = document.querySelector("[data-confirm-dialog]");
+  if (ask) {
+    var pending = null;
+    var okBtn = ask.querySelector("[data-confirm-ok]");
+    var field = function (name) { return ask.querySelector("[data-confirm-" + name + "]"); };
+    var finish = function (value) { // play the exit animation, then close
+      if (!ask.open || ask.classList.contains("is-closing")) return;
+      ask.classList.add("is-closing");
+      var closed = false;
+      var done = function () { if (closed) return; closed = true; ask.classList.remove("is-closing"); ask.close(value); };
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return done();
+      ask.addEventListener("animationend", done, { once: true });
+      setTimeout(done, 300); // backup for browsers that skip the animation (hidden tab, power saving)
+    };
+    document.querySelectorAll("form[data-confirm]").forEach(function (f) {
+      f.addEventListener("submit", function (e) {
+        if (f.dataset.confirmed) return;
+        e.preventDefault();
+        pending = f;
+        var d = f.dataset;
+        field("title").textContent = d.confirmTitle || "Are you sure?";
+        field("text").textContent = d.confirm;
+        okBtn.textContent = d.confirmOk || "Confirm";
+        ask.classList.toggle("is-danger", d.confirmTone === "danger");
+        field("details").hidden = !d.confirmEmployee;
+        ["employee", "claim", "amount"].forEach(function (k) {
+          field(k).textContent = d["confirm" + k.charAt(0).toUpperCase() + k.slice(1)] || "";
+        });
+        ask.returnValue = "";
+        ask.showModal();
+      });
     });
-  });
+    ask.addEventListener("click", function (e) {
+      var btn = e.target.closest("button[value]");
+      if (btn) { e.preventDefault(); finish(btn.value); }
+      else if (e.target === ask) finish("cancel"); // backdrop
+    });
+    ask.addEventListener("cancel", function (e) { e.preventDefault(); finish("cancel"); }); // Escape key
+    ask.addEventListener("close", function () {
+      var f = pending; pending = null;
+      if (f && ask.returnValue === "ok") { f.dataset.confirmed = "1"; f.requestSubmit(); }
+    });
+    window.addEventListener("pageshow", function (e) { // back button: ask again next time
+      if (e.persisted) document.querySelectorAll("form[data-confirmed]").forEach(function (f) { delete f.dataset.confirmed; });
+    });
+  }
   document.querySelectorAll("[data-needs-comment]").forEach(function (btn) {
     btn.addEventListener("click", function (e) {
       var comment = btn.form.querySelector("textarea[name=comment]");
