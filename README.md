@@ -99,10 +99,11 @@ Values can also be placed in a `.env` file at the project root.
 python -m pytest -q
 ```
 
-There are 76 tests:
+There are 91 tests, covering 100% of the code:
 
 - `tests/test_rules.py` covers every business rule.
 - `tests/test_flows.py` runs full journeys through the HTTP layer: create, submit, review, reject and resubmit, pay, permissions, CSRF, receipts and exports.
+- `tests/test_edge_cases.py` covers bad input, refused actions and the less common paths through each page.
 - `tests/test_landing.py` and `tests/test_health.py` cover the public pages.
 - `tests/test_seed.py` loads the sample data through the real rules, so a rule change that breaks it fails a test instead of the app start-up.
 
