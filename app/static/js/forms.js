@@ -26,6 +26,9 @@
     var lines = form.querySelector("[data-lines]");
     var template = form.querySelector("[data-line-template]");
     var rates = JSON.parse(form.dataset.rates);
+    // the policy limits come from the server (rules.py), so the live hints always match what is enforced
+    var threshold = parseFloat(form.dataset.threshold), mealLimit = parseFloat(form.dataset.mealLimit.replace(/,/g, ""));
+    var taka = function (v) { return v.toLocaleString("en-IN"); };
     var totalEl = form.querySelector("[data-total]");
     var nextKey = 0;
 
@@ -43,9 +46,9 @@
         line.querySelector("[data-line-number]").textContent = i + 1;
         var value = base(line);
         total += value;
-        var needsNote = line.querySelector("[data-category]").value === "Meals" && value > 50;
+        var needsNote = line.querySelector("[data-category]").value === "Meals" && value > mealLimit;
         var flag = line.querySelector("[data-note-flag]");
-        flag.textContent = needsNote ? "Required for meals over ৳50" : "Optional";
+        flag.textContent = needsNote ? "Required for meals over ৳" + taka(mealLimit) : "Optional";
         flag.classList.toggle("is-required", needsNote);
         var note = line.querySelector("[data-note]");
         note.required = needsNote;
@@ -64,11 +67,11 @@
       set("[data-items-plural]", all.length === 1 ? "" : "s");
       set("[data-sum-lines]", all.length);
       set("[data-sum-receipts]", receipts);
-      set("[data-finance]", total > 1000 ? "Required, over ৳1,000" : "Not needed");
+      set("[data-finance]", total > threshold ? "Required, over ৳" + taka(threshold) : "Not needed");
       check("title", !!form.querySelector("#title").value.trim());
       check("lines", complete);
       check("receipts", receipts === all.length);
-      // only a pass when there is something to pass; with no meals over ৳50 the rule simply doesn't apply
+      // only a pass when there is something to pass; with no meals over the limit the rule simply doesn't apply
       check("notes", mealsNeedingNote > 0 && notesOk);
       var notes = form.querySelector('[data-check="notes"]');
       if (notes) notes.classList.toggle("is-na", mealsNeedingNote === 0);

@@ -55,7 +55,7 @@
               <p class="panel-note">
                 {% if user.role == "employee" %}{{ user.manager.name if user.manager else "Your manager" }} reviews the claims you submit.
                 {% elif user.role == "manager" %}You review claims from {{ user.reports|length }} {{ "person" if user.reports|length == 1 else "people" }}.
-                {% else %}Finance signs off claims over ৳1,000 and records payments for everyone.{% endif %}
+                {% else %}Finance signs off claims over ৳{{ finance_limit }} and records payments for everyone.{% endif %}
               </p>
             </div>
           </div>

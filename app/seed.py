@@ -1,11 +1,15 @@
 """Sample team and claims, loaded into an empty database so every workspace has work in it.
 Claims are moved through the real rules, so their history matches what the app would record."""
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from . import rules
 from .extensions import db
-from .models import Claim, LineItem, User
+from .models import Claim, LineItem, User, utcnow
+
+# The sample story below is written as if today were noon on 9 November 2026. On loading, every date moves
+# by the same amount so the story always ends "now": this month's figures and the last six months stay filled.
+STORY_NOW = datetime(2026, 11, 9, 12)
 
 
 def _user(name, email, role, title, manager=None, sample=False):
@@ -14,9 +18,9 @@ def _user(name, email, role, title, manager=None, sample=False):
     return user
 
 
-def _claim(owner, title, items, started):
+def _claim(owner, title, items, started, shift):
     claim = Claim(owner=owner, title=title, created_at=started, updated_at=started,
-                  items=[LineItem(date=date.fromisoformat(d), category=c, description=desc,
+                  items=[LineItem(date=(datetime.fromisoformat(d) + shift).date(), category=c, description=desc,
                                   amount=Decimal(a), currency=cur, note=note)
                          for d, c, desc, a, cur, note in items])
     rules.record_created(claim, owner)
@@ -41,13 +45,14 @@ def seed_if_empty():
     rafiq = _user("Rafiq Hasan", "rafiq.hasan@claimora.app", "employee", "QA Engineer", manager)
     sadia = _user("Sadia Rahman", "sadia.rahman@claimora.app", "employee", "Product Designer", manager)
     db.session.flush()  # ids are needed by the approval rules
-    _apply(_plan(manager, finance, nusrat, rafiq, sadia))
+    _apply(_plan(manager, finance, nusrat, rafiq, sadia), shift=utcnow() - STORY_NOW)
     db.session.commit()
 
 
-def _apply(plan):
+def _apply(plan, shift):
     for owner, title, items, started, steps, *gap in plan:
-        claim = _claim(owner, title, items, started)
+        started += shift
+        claim = _claim(owner, title, items, started, shift)
         db.session.add(claim)
         db.session.flush()
         _steps(claim, started, *steps, gap=gap[0] if gap else 5)
@@ -109,8 +114,8 @@ def _plan(manager, finance, nusrat, rafiq, sadia):
             ("2026-11-01", "Meals", "Lunch with client", "620", "BDT", "Lunch with the onboarding client, 3 people."),
             ("2026-11-01", "Travel", "Ride share", "160", "BDT", None),
         ], t(32), [submit]),
-        (sadia, "Usability study incentives", [("2026-10-18", "Other", "Gift cards for 4 participants", "800", "BDT", None)],
-         t(18), [submit, m_ok, pay]),
+        (sadia, "Usability study incentives", [("2026-11-08", "Other", "Gift cards for 4 participants", "800", "BDT", None)],
+         datetime(2026, 11, 8, 20), [submit, m_ok, pay]),  # paid an hour before "now", so this month has a payment
 
         # Finance work: manager-approved claims over 1,000 waiting for sign-off ...
         (rafiq, "Test devices for release", [

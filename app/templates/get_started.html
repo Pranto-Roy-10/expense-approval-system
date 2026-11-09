@@ -18,7 +18,7 @@
               ["See the team's claims, oldest first", "Approve, or return with a comment", "Never approve your own claim"],
               '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>'),
   "finance": ("Pay it", "Sign off high-value claims, record payments and watch spend.",
-              ["Second sign-off above ৳1,000", "Record each payment once sent", "Spend by month, category and person"],
+              ["Second sign-off above ৳" ~ finance_limit, "Record each payment once sent", "Spend by month, category and person"],
               '<rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h4"/>'),
 } %}
 {% set tick %}<svg class="tick-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{% endset %}

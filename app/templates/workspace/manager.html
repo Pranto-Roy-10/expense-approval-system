@@ -2,12 +2,12 @@
 {% from "_macros.html" import badge, metric, empty with context %}
 {% block title %}Review queue · Claimora{% endblock %}
 {% block heading %}Review <strong>queue</strong>{% endblock %}
-{% block lead %}Claims from your team, oldest first. Approved claims over ৳1,000 go on to Finance; the rest are ready to pay.{% endblock %}
+{% block lead %}Claims from your team, oldest first. Approved claims over ৳{{ finance_limit }} go on to Finance; the rest are ready to pay.{% endblock %}
 
 {% block workspace %}
 <div class="metrics" data-cards>
   {{ metric("Waiting for you", queue|length, ("Oldest submitted " ~ (oldest|ago) ~ (" ago" if oldest|ago != "today" else "")) if oldest else "Nothing waiting") }}
-  {{ metric("Over ৳1,000", queue|selectattr("total", "gt", 1000)|list|length, "Will also need Finance sign-off") }}
+  {{ metric("Over ৳" ~ finance_limit, queue|selectattr("total", "gt", finance_threshold)|list|length, "Will also need Finance sign-off") }}
   {{ metric("Approved this month", approved_count, "Claims you approved") }}
   {{ metric("Approved value", approved_total, "This month", money=True) }}
 </div>
@@ -31,7 +31,7 @@
           <td><span class="person"><span class="avatar avatar-xs">{{ c.owner.initials }}</span>{{ c.owner.name }}</span></td>
           <td class="nowrap">{{ c.entered("submitted")|ago }}</td>
           <td class="nowrap">{% if c.receipts == c.items|length %}<span class="tick">All {{ c.receipts }}</span>{% else %}<span class="warn-text">{{ c.receipts }} of {{ c.items|length }}</span>{% endif %}</td>
-          <td class="num">{{ c.total|taka }}{% if c.total > 1000 %}<span class="cell-sub">Needs Finance</span>{% endif %}</td>
+          <td class="num">{{ c.total|taka }}{% if c.total > finance_threshold %}<span class="cell-sub">Needs Finance</span>{% endif %}</td>
           <td class="cell-action"><a class="btn btn-primary btn-sm" href="{{ url_for('claims.detail', claim_id=c.id) }}#review">Review</a></td>
         </tr>
         {% endfor %}

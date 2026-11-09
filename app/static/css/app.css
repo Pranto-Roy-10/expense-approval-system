@@ -627,3 +627,7 @@ dt { font-size: .8125rem; color: var(--muted); }
 .page .not-found-inner h1 { margin: 0 0 1rem; font-size: clamp(1.75rem, 4vw, 2.5rem); }
 .not-found-text { margin: 0 auto 2rem; max-width: 32rem; color: var(--muted); font-size: 1.0625rem; line-height: 1.6; }
 .not-found-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+.menu-list button { display: grid; gap: .05rem; padding: .55rem .75rem; border: 0; border-radius: .5rem; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.menu-list button:hover, .menu-list button:focus-visible { background: var(--surface-2); outline: none; }
+.menu-field { display: grid; gap: .3rem; padding: .45rem .75rem .65rem; margin-bottom: .2rem; border-bottom: 1px solid var(--border); font-size: .8125rem; color: var(--muted); }
+.menu-field select { min-height: 2.25rem; padding: 0 .5rem; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); font: inherit; font-size: .875rem; }

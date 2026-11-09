@@ -3,7 +3,7 @@ from io import BytesIO
 
 import xlsxwriter
 
-from .models import CATEGORIES, utcnow
+from .models import CATEGORIES, RATES, utcnow
 
 INK, SAFFRON, PAPER, LINE, MUTED = "#1C1917", "#F5A524", "#FBFAF7", "#E7E2D9", "#57534E"
 # status fill / text, matching the badges in the app
@@ -84,8 +84,8 @@ def claims_workbook(claims, filters, exported_by, title="Claims ledger"):
     ws.merge_range(row, 0, row, last_col - 1, f"Total of {len(claims)} claim{'s' if len(claims) != 1 else ''}", total_label)
     ws.write_formula(row, last_col, f"=SUM(J{first}:J{last})" if claims else "=0", total_num,
                      float(sum(c.total for c in claims)))
-    ws.write(row + 2, 0, "Amounts in Taka. USD and EUR lines are converted at the fixed company rates "
-                         "(1 USD = 122 BDT, 1 EUR = 132 BDT).", foot)
+    rates = ", ".join(f"1 {code} = {rate:g} BDT" for code, rate in RATES.items() if code != "BDT")
+    ws.write(row + 2, 0, f"Amounts in Taka. Other currencies are converted at the fixed company rates ({rates}).", foot)
 
     ws.freeze_panes(header_row + 1, 2)
     if claims:

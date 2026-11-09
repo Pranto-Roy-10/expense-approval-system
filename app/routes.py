@@ -10,7 +10,8 @@ from .auth import login_required
 from .dashboard import finance_overview
 from .export import claims_workbook
 from .extensions import db
-from .models import AuditEntry, Claim, User, utcnow
+from .models import RATES, AuditEntry, Claim, User, utcnow
+from .rules import FINANCE_THRESHOLD, MEAL_NOTE_LIMIT
 
 bp = Blueprint("main", __name__)
 
@@ -31,6 +32,14 @@ def taka(amount, decimals=2):
         head = head[:-2]
     text = ",".join(groups + [tail]) + (f".{frac}" if frac else "")
     return f"-{text}" if amount < 0 else text
+
+
+@bp.record_once
+def policy_globals(state):
+    """The rule values every page shows, taken from the rules themselves so text and logic never drift apart.
+    Globals (not a context processor) so imported macros can read them too."""
+    state.app.jinja_env.globals.update(finance_threshold=FINANCE_THRESHOLD, finance_limit=taka(FINANCE_THRESHOLD, 0),
+                                       meal_limit=taka(MEAL_NOTE_LIMIT, 0), rates=RATES)
 
 
 @bp.get("/")
@@ -95,7 +104,15 @@ def workspace():
 @bp.get("/dashboard")
 @login_required("finance")
 def dashboard():
-    return render_template("dashboard.html", **finance_overview())
+    return render_template("dashboard.html", export_ranges=EXPORT_RANGES, **finance_overview())
+
+
+def _fresh(response):
+    """Exports are built from the live data on every click. send_file would otherwise reuse the
+    one-year cache meant for static files, and the browser would hand back an old copy."""
+    response.headers["Cache-Control"] = "no-store"
+    response.headers.pop("Expires", None)
+    return response
 
 
 @bp.get("/dashboard/export.xlsx")
@@ -117,25 +134,38 @@ def dashboard_export():
         ("Search", request.args.get("q", "").strip()),
     ) if value]
     data = claims_workbook(claims, applied, exported_by=g.user.name)
-    return send_file(BytesIO(data), as_attachment=True,
-                     download_name=f"claimora-claims-{date.today().isoformat()}.xlsx",
-                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    return _fresh(send_file(BytesIO(data), as_attachment=True,
+                            download_name=f"claimora-claims-{date.today().isoformat()}.xlsx",
+                            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+
+
+# Export ranges by month of final approval (UTC, like the dashboard): key -> (label, months counted back including this one)
+EXPORT_RANGES = {"month": ("This month", 1), "3m": ("Last 3 months", 3), "12m": ("Last 12 months", 12), "all": ("All time", None)}
 
 
 def _approved_claims():
-    """Every approved claim; paid ones included, since they were approved first."""
-    return Claim.query.filter(Claim.status.in_(("approved", "paid"))).order_by(Claim.id).all()
+    """Approved claims in the chosen range; paid ones included, since they were approved first.
+    Returns (claims, range key, range label). An unknown range means all time."""
+    key = request.args.get("range") if request.args.get("range") in EXPORT_RANGES else "all"
+    label, months = EXPORT_RANGES[key]
+    claims = Claim.query.filter(Claim.status.in_(("approved", "paid"))).order_by(Claim.id).all()
+    if months:
+        now = utcnow()
+        first = now.year * 12 + now.month - 1 - (months - 1)  # first month in the range, counted from year 0
+        claims = [c for c in claims if (a := c.entered("approved")) and a.year * 12 + a.month - 1 >= first]
+    return claims, key, label
 
 
 @bp.get("/dashboard/approved.xlsx")
 @login_required("finance")
 def approved_xlsx():
     """Approved claims in the same branded Excel layout as the ledger export."""
-    data = claims_workbook(_approved_claims(), [("Status", "Approved and paid")], exported_by=g.user.name,
+    claims, key, label = _approved_claims()
+    data = claims_workbook(claims, [("Status", "Approved and paid"), ("Approved", label)], exported_by=g.user.name,
                            title="Approved claims")
-    return send_file(BytesIO(data), as_attachment=True,
-                     download_name=f"claimora-approved-{date.today().isoformat()}.xlsx",
-                     mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    return _fresh(send_file(BytesIO(data), as_attachment=True,
+                            download_name=f"claimora-approved-{key}-{date.today().isoformat()}.xlsx",
+                            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
 
 
 def _cell(text):
@@ -147,7 +177,7 @@ def _cell(text):
 @login_required("finance")
 def approved_csv():
     """The same approved claims as plain CSV, for tools that can't read Excel files."""
-    claims = _approved_claims()
+    claims, key, _ = _approved_claims()
     out = StringIO()
     writer = csv.writer(out)
     writer.writerow(["Claim ID", "Title", "Employee", "Manager", "Main category", "Approved on", "Status", "Total (BDT)"])
@@ -157,8 +187,8 @@ def approved_csv():
                          c.main_category,
                          approved.strftime("%Y-%m-%d") if approved else "", c.label, f"{c.total:.2f}"])
     # BOM so Excel opens the UTF-8 text (names, ৳) correctly
-    return Response("﻿" + out.getvalue(), mimetype="text/csv", headers={
-        "Content-Disposition": f"attachment; filename=claimora-approved-{date.today().isoformat()}.csv"})
+    return _fresh(Response("﻿" + out.getvalue(), mimetype="text/csv", headers={
+        "Content-Disposition": f"attachment; filename=claimora-approved-{key}-{date.today().isoformat()}.csv"}))
 
 
 @bp.get("/profile")

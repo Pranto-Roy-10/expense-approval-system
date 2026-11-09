@@ -57,17 +57,19 @@ def finance_overview(today=None):
         "reject_rate": rejected / len(decisions) * 100 if decisions else None, "decisions": len(decisions),
     }
 
-    # ---- Spend by expense month and category (last six months, empty months kept) ----
+    # ---- Approved spend by month of final approval and category (last six months, empty months kept) ----
+    # Same basis as the "Approved this month" card, so this month's column always equals that card.
     months = list(range(this_month - 5, this_month + 1))
     stacked = {cat: [ZERO] * 6 for cat in CATEGORIES}
     by_category, by_currency = defaultdict(Decimal), {}
     for c in spent:
+        approved_at = c.entered("approved")
+        slot = _month(approved_at) - months[0] if approved_at else -1
         for item in c.items:
             by_category[item.category] += item.base_amount
             cur = by_currency.setdefault(item.currency, {"code": item.currency, "original": ZERO, "base": ZERO})
             cur["original"] += item.amount
             cur["base"] += item.base_amount
-            slot = _month(item.date) - months[0]
             if 0 <= slot < 6:
                 stacked[item.category][slot] += item.base_amount
     spend = sum(by_category.values(), ZERO)
@@ -116,7 +118,8 @@ def finance_overview(today=None):
         "aging": [{"label": a["label"], "total": float(a["total"]), "count": a["count"]} for a in aging],
     }
     return {
-        "today": today, "kpis": kpis, "chart": chart, "spend": spend, "aging": aging, "pipeline": pipeline,
+        "today": today, "kpis": kpis, "chart": chart, "spend": spend,
+        "trend_total": sum((sum(v) for v in stacked.values()), ZERO), "aging": aging, "pipeline": pipeline,
         "categories": sorted(by_category.items(), key=lambda kv: -kv[1]),
         "currencies": sorted(by_currency.values(), key=lambda c: -c["base"]),
         "claimants": sorted(owners.values(), key=lambda o: -o["total"])[:5],

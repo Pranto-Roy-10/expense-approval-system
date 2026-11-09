@@ -155,12 +155,15 @@
   });
 
   // Approved-claims menu: close on outside click, Escape, or after picking a format.
+  document.querySelector("[data-export-form]").addEventListener("submit", function () {
+    document.querySelector("[data-export-at]").value = Date.now();
+  });
   var menu = document.querySelector("[data-menu]");
   document.addEventListener("click", function (e) { if (menu.open && !menu.contains(e.target)) menu.open = false; });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && menu.open) { menu.open = false; menu.querySelector("summary").focus(); }
   });
-  menu.querySelectorAll("a").forEach(function (a) { a.addEventListener("click", function () { menu.open = false; }); });
+  menu.querySelectorAll("button[formaction]").forEach(function (b) { b.addEventListener("click", function () { setTimeout(function () { menu.open = false; }, 0); }); });
 
   // Download a branded Excel file of exactly what the filters show, in the current sort order.
   var exportBtn = document.querySelector("[data-export]");
@@ -173,6 +176,7 @@
     }
     filters.forEach(function (f) { if (f.value) params.set(f.dataset.filter, f.value); });
     if (search.value.trim()) params.set("q", search.value.trim());
+    params.set("at", Date.now()); // a new address each time: no browser can reuse an old copy
     window.location.href = exportBtn.dataset.export + "?" + params.toString();
   });
 })();

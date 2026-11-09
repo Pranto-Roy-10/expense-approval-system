@@ -20,8 +20,8 @@
     ["Submitted", "submitted", 0, -1, 0, null],
     ["In review", "submitted", 0, 0, 0, null],
     ["Awaiting Finance", "submitted", 1, 1, 0.5, ["Approved by manager", "Sent to Finance"]],
-    ["Approved", "approved", 2, 2, 1, ["Finance approved", "Over ৳1,000, signed off"]],
-    ["Paid", "paid", 3, -1, 1, ["Paid out", "৳ 18,940 reimbursed"]],
+    ["Approved", "approved", 2, 2, 1, ["Finance approved", "Over ৳" + (aside ? aside.dataset.limit : "") + ", signed off"]],
+    ["Paid", "paid", 3, -1, 1, ["Paid out", (aside ? aside.querySelector("tfoot .num").textContent.replace(/\.00$/, "") : "") + " reimbursed"]],
   ];
   function authState(n) {
     var st = AUTH_STATES[n], badge = aside.querySelector("[data-auth-badge]");

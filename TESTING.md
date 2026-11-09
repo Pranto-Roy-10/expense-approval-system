@@ -20,7 +20,7 @@ The tests use an in-memory database, so they never touch real data. GitHub Actio
 
 ## Coverage
 
-**100%**, with 91 tests passing. Every business rule in the brief has its own unit tests in `tests/test_rules.py`, and `test_full_claim_lifecycle` takes one claim through every status: submitted, rejected, resubmitted, approved by the manager and Finance, and paid.
+**100%**, with 96 tests passing. Every business rule in the brief has its own unit tests in `tests/test_rules.py`, and `test_full_claim_lifecycle` takes one claim through every status: submitted, rejected, resubmitted, approved by the manager and Finance, and paid.
 
 ## Edge cases tested
 
@@ -57,4 +57,4 @@ The tests use an in-memory database, so they never touch real data. GitHub Actio
 
 **Exports**
 - Claim titles starting with `=` are written as plain text in Excel and CSV, never as formulas.
-- The approved-claims export includes only approved and paid claims.
+- The approved-claims export includes only approved and paid claims, limited to the chosen range (this month, last 3 or 12 months, or all time).

@@ -98,7 +98,7 @@
             <div class="field">
               <label for="comment">Comment</label>
               <textarea id="comment" name="comment" rows="3" maxlength="1000" placeholder="Required when rejecting"></textarea>
-              {% if not claim.awaiting_finance and claim.total > 1000 %}<p class="field-hint">Over ৳1,000: approving sends it to Finance.</p>{% endif %}
+              {% if not claim.awaiting_finance and claim.total > finance_threshold %}<p class="field-hint">Over ৳{{ finance_limit }}: approving sends it to Finance.</p>{% endif %}
             </div>
             <div class="form-actions">
               <button class="btn btn-ghost" type="submit" formaction="{{ url_for('claims.reject', claim_id=claim.id) }}" data-needs-comment>Reject</button>

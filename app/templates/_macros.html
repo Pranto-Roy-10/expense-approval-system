@@ -8,7 +8,7 @@
 
 {# Approval progress: Manager, Finance (claims over 1,000 only), Paid. #}
 {% macro progress(claim) %}
-{% set stages = ["Manager"] + (["Finance"] if claim.total > 1000 else []) + ["Paid"] %}
+{% set stages = ["Manager"] + (["Finance"] if claim.total > finance_threshold else []) + ["Paid"] %}
 {% if claim.status == "paid" %}{% set done = stages|length %}
 {% elif claim.status == "approved" %}{% set done = stages|length - 1 %}
 {% elif claim.awaiting_finance %}{% set done = 1 %}

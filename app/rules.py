@@ -27,7 +27,7 @@ def validate_items(items):
         if item.amount is None or item.amount <= 0:
             raise RuleError(f"Line {n}: the amount must be more than zero.")
         if item.category == "Meals" and item.base_amount > MEAL_NOTE_LIMIT and not (item.note or "").strip():
-            raise RuleError(f"Line {n}: meals over ৳50 need a note.")
+            raise RuleError(f"Line {n}: meals over ৳{MEAL_NOTE_LIMIT:,.0f} need a note.")
 
 
 def _record(claim, actor, action, to_status, comment=None):

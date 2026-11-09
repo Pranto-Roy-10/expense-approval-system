@@ -85,7 +85,7 @@
     {% endif %}
 
     <form class="claim-layout" method="post" enctype="multipart/form-data" novalidate data-claim-form
-          data-rates='{{ currencies|tojson }}'>
+          data-rates='{{ currencies|tojson }}' data-threshold="{{ finance_threshold }}" data-meal-limit="{{ meal_limit }}">
       {{ csrf() }}
       {% if form_token %}<input type="hidden" name="form_token" value="{{ form_token }}">{% endif %}
       <div class="claim-main">
@@ -134,7 +134,7 @@
             <li data-check="title">Title added</li>
             <li data-check="lines">Every line has a date, category, amount and description</li>
             <li data-check="receipts">Every line has a receipt</li>
-            <li data-check="notes" class="is-na">Meals over ৳50 have a note<span class="na-hint"> (none on this claim)</span></li>
+            <li data-check="notes" class="is-na">Meals over ৳{{ meal_limit }} have a note<span class="na-hint"> (none on this claim)</span></li>
           </ul>
           <div class="summary-actions">
             <button class="btn btn-primary btn-block" type="submit" name="action" value="submit" data-busy="Submitting…">Submit for approval</button>

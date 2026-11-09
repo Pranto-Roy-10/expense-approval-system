@@ -142,7 +142,7 @@
     <section class="lp-strip">
       <div class="container lp-strip-grid" data-reveal>
         <div><b>3</b><span>roles, each with its own workspace</span></div>
-        <div><b>2</b><span>approval levels for claims over ৳1,000</span></div>
+        <div><b>2</b><span>approval levels for claims over ৳{{ finance_limit }}</span></div>
         <div><b>5</b><span>standard expense categories</span></div>
         <div><b>100%</b><span>of status changes recorded</span></div>
       </div>
@@ -182,12 +182,12 @@
             <ul class="ticks">
               <li>{{ tick|safe }}Managers see their team's claims, oldest first.</li>
               <li>{{ tick|safe }}Approve, or return a claim with a comment explaining why.</li>
-              <li>{{ tick|safe }}Claims over ৳1,000 go on to Finance for a second sign-off.</li>
+              <li>{{ tick|safe }}Claims over ৳{{ finance_limit }} go on to Finance for a second sign-off.</li>
             </ul>
           </div>
           <div class="stack-cards" aria-hidden="true">
             <div class="s-card"><p class="s-title">Tanvir Ahmed<span>Manager · Approved</span></p><span class="s-badge ok">Approved</span></div>
-            <div class="s-card"><p class="s-title">Over ৳1,000<span>Sent to Finance for sign-off</span></p><span class="s-badge warn">Finance</span></div>
+            <div class="s-card"><p class="s-title">Over ৳{{ finance_limit }}<span>Sent to Finance for sign-off</span></p><span class="s-badge warn">Finance</span></div>
             <div class="s-card"><p class="s-title">Farhana Islam<span>Finance · “Within the travel budget.”</span></p><span class="s-badge ok">Approved</span></div>
           </div>
         </div>
@@ -222,8 +222,8 @@
         {% set features = [
           ("c1", "Line-item claims", "One claim, many expenses, each with its own date, category and amount.", "M4 6h16M4 12h16M4 18h10"),
           ("c2", "Receipts per line", "PDF or image on every line, checked on upload and viewable in one click.", "M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6"),
-          ("c3", "Two-level approval", "Manager first, then Finance for anything over ৳1,000.", "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"),
-          ("c4", "Meal policy", "Meals over ৳50 need a note before a claim can be submitted.", "M12 8v5M12 16.5v.5M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0"),
+          ("c3", "Two-level approval", "Manager first, then Finance for anything over ৳" ~ finance_limit ~ ".", "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"),
+          ("c4", "Meal policy", "Meals over ৳" ~ meal_limit ~ " need a note before a claim can be submitted.", "M12 8v5M12 16.5v.5M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0"),
           ("c1", "No self-approval", "Nobody can approve a claim they submitted, whatever their role.", "M5 5l14 14M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18"),
           ("c2", "Full audit trail", "Who changed what, when, and why, on every claim.", "M12 7v5l3 2M3 12a9 9 0 1 0 18 0 9 9 0 1 0-18 0"),
           ("c3", "Three currencies", "Claim in Taka, US dollars or euros; totals convert at fixed rates.", "M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"),

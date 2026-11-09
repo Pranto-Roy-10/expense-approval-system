@@ -190,3 +190,20 @@ def test_unknown_pages_show_the_claimora_404_page(client, team):
     sign_in(client, team["outsider"])
     res = client.get("/claims/99999")  # a claim that doesn't exist, while signed in
     assert res.status_code == 404 and b"Go to your workspace" in res.data
+
+
+def test_pages_take_limits_and_rates_from_the_rules(app, client, team):
+    from app.models import RATES
+    assert app.jinja_env.globals["finance_threshold"] == rules.FINANCE_THRESHOLD
+    sign_in(client, team["employee"])
+    form = client.get("/claims/new").get_data(as_text=True)
+    assert f"USD at ৳{RATES['USD']:,.0f}" in form and f"EUR at ৳{RATES['EUR']:,.0f}" in form
+    assert f'data-threshold="{rules.FINANCE_THRESHOLD}"' in form and f"Meals over ৳{rules.MEAL_NOTE_LIMIT:,.0f} have a note" in form
+
+
+def test_exports_are_never_cached_by_the_browser(client, team):
+    # a cached copy would show old figures after the data changed
+    sign_in(client, team["finance"])
+    for url in ("/dashboard/export.xlsx", "/dashboard/approved.xlsx?range=month", "/dashboard/approved.csv?range=all"):
+        res = client.get(url)
+        assert res.headers["Cache-Control"] == "no-store" and "Expires" not in res.headers, url

@@ -2,7 +2,7 @@
 {% from "_macros.html" import badge, metric, empty, csrf with context %}
 {% block title %}Approvals & payments · Claimora{% endblock %}
 {% block heading %}Approvals &amp; <strong>payments</strong>{% endblock %}
-{% block lead %}Sign off manager-approved claims over ৳1,000, then record each payment once the money has been sent.{% endblock %}
+{% block lead %}Sign off manager-approved claims over ৳{{ finance_limit }}, then record each payment once the money has been sent.{% endblock %}
 {% block actions %}
 <a class="btn btn-ghost" href="{{ url_for('main.dashboard') }}">View spend overview</a>
 {% endblock %}
@@ -37,7 +37,7 @@
     </table>
   </div>
   {% else %}
-  {{ empty("Nothing to sign off. ", "Claims over ৳1,000 arrive here after their manager approves them.") }}
+  {{ empty("Nothing to sign off. ", "Claims over ৳" ~ finance_limit ~ " arrive here after their manager approves them.") }}
   {% endif %}
 </section>
 

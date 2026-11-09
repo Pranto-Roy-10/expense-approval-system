@@ -2,7 +2,7 @@
 {% from "_macros.html" import badge, metric, empty with context %}
 {% block title %}My claims · Claimora{% endblock %}
 {% block heading %}My <strong>claims</strong>{% endblock %}
-{% block lead %}{% if g.user.manager %}Claims you submit go to {{ g.user.manager.name }} first. Anything over ৳1,000 also needs Finance sign-off.{% else %}Create claims, attach receipts and track them until they're paid.{% endif %}{% endblock %}
+{% block lead %}{% if g.user.manager %}Claims you submit go to {{ g.user.manager.name }} first. Anything over ৳{{ finance_limit }} also needs Finance sign-off.{% else %}Create claims, attach receipts and track them until they're paid.{% endif %}{% endblock %}
 {% block actions %}
 <a class="btn btn-primary" href="{{ url_for('claims.new') }}">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New claim

@@ -12,10 +12,17 @@
     <summary class="btn btn-ghost">Approved claims
       <svg class="menu-caret" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
     </summary>
-    <div class="menu-list">
-      <a href="{{ url_for('main.approved_xlsx') }}"><strong>Excel</strong><span>Branded, with a summary sheet</span></a>
-      <a href="{{ url_for('main.approved_csv') }}"><strong>CSV</strong><span>Plain text for other tools</span></a>
-    </div>
+    <form class="menu-list" method="get" data-export-form>
+      {# a different address on every download, so no browser can hand back a copy it saved earlier #}
+      <input type="hidden" name="at" value="" data-export-at>
+      <label class="menu-field" for="export-range">Approved in
+        <select id="export-range" name="range">
+          {% for key, (label, _) in export_ranges.items() %}<option value="{{ key }}"{% if key == "month" %} selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </label>
+      <button type="submit" formaction="{{ url_for('main.approved_xlsx') }}"><strong>Excel</strong><span>Branded, with a summary sheet</span></button>
+      <button type="submit" formaction="{{ url_for('main.approved_csv') }}"><strong>CSV</strong><span>Plain text for other tools</span></button>
+    </form>
   </details>
   <a class="btn btn-primary" href="{{ url_for('main.workspace') }}">Approvals &amp; payments</a>
 </div>
@@ -66,8 +73,8 @@
 <div class="dash-row dash-row-main">
   <section class="panel" aria-labelledby="trend-title" data-cards>
     <div class="panel-head">
-      <div><h2 id="trend-title" class="h3">Approved spend by month</h2><p class="panel-note">By expense date and category, last 6 months</p></div>
-      <p class="panel-figure"><span class="muted">Total</span> ৳&nbsp;{{ spend|taka(0) }}</p>
+      <div><h2 id="trend-title" class="h3">Approved spend by month</h2><p class="panel-note">By month of final approval and category, last 6 months</p></div>
+      <p class="panel-figure"><span class="muted">6-month total</span> ৳&nbsp;{{ trend_total|taka(0) }}</p>
     </div>
     <div class="panel-body">
       <ul class="chart-legend" aria-label="Categories">
@@ -200,7 +207,7 @@
           {% endfor %}
         </tbody>
       </table>
-      <p class="panel-note fx-note">Rates: 1 USD = ৳122 · 1 EUR = ৳132</p>
+      <p class="panel-note fx-note">Rates: {% for code, rate in rates.items() if code != "BDT" %}1 {{ code }} = ৳{{ rate|taka(0) }}{{ " · " if not loop.last }}{% endfor %}</p>
       {% else %}<p class="muted">Appears once claims are approved.</p>{% endif %}
     </div>
   </section>

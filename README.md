@@ -99,7 +99,7 @@ Values can also be placed in a `.env` file at the project root.
 python -m pytest -q
 ```
 
-There are 91 tests, covering 100% of the code:
+There are 96 tests, covering 100% of the code:
 
 - `tests/test_rules.py` covers every business rule.
 - `tests/test_flows.py` runs full journeys through the HTTP layer: create, submit, review, reject and resubmit, pay, permissions, CSRF, receipts and exports.
