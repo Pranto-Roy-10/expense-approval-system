@@ -46,8 +46,6 @@ class Claim(db.Model):
     manager_approved_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, nullable=False)
-    # updated_at doubles as a version: a save fails if someone else changed the claim since it was read,
-    # so two clicks on "Mark as paid" at once can't both go through
     __mapper_args__ = {"version_id_col": updated_at, "version_id_generator": lambda _: utcnow()}
 
     owner = db.relationship("User", backref="claims")
@@ -79,7 +77,7 @@ class Claim(db.Model):
         if self.status == "submitted":
             if self.awaiting_finance:
                 return "With Finance"
-            return f"With {self.owner.manager.name}"  # submitting requires a manager
+            return f"With {self.owner.manager.name}" if self.owner.manager else "With manager"
         return {"draft": "Not submitted", "rejected": "Returned to you", "approved": "Payment pending",
                 "paid": "Paid"}[self.status]
 
