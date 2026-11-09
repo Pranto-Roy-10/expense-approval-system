@@ -182,3 +182,11 @@ def test_app_loads_the_sample_data_on_first_start():
         assert Claim.query.count() == 24
         db.session.remove()
         db.engine.dispose()
+
+
+def test_unknown_pages_show_the_claimora_404_page(client, team):
+    res = client.get("/no-such-page")
+    assert res.status_code == 404 and b"Page <strong>not found</strong>" in res.data and b"Go to the home page" in res.data
+    sign_in(client, team["outsider"])
+    res = client.get("/claims/99999")  # a claim that doesn't exist, while signed in
+    assert res.status_code == 404 and b"Go to your workspace" in res.data

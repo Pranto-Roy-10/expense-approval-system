@@ -241,6 +241,11 @@ def profile_edit():
     return redirect(url_for("main.profile"))
 
 
+@bp.app_errorhandler(404)
+def not_found(_):
+    return render_template("404.html"), 404
+
+
 @bp.app_errorhandler(413)
 def too_large(_):
     flash("Those receipts are too large together (30 MB at most per save). Attach fewer or smaller files.", "error")

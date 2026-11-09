@@ -619,3 +619,11 @@ dt { font-size: .8125rem; color: var(--muted); }
 @keyframes confirm-out { to { opacity: 0; transform: translateY(.5rem) scale(.97); } }
 @keyframes confirm-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .confirm, .confirm::backdrop { animation: none; } }
+
+/* ---------- 404 page ---------- */
+.not-found { display: grid; align-items: center; min-height: 70vh; overflow: hidden; }
+.not-found-inner { position: relative; z-index: 1; max-width: 40rem; text-align: center; }
+.not-found-code { margin: 0 0 .5rem; font-family: var(--mono); font-size: clamp(4.5rem, 14vw, 8rem); font-weight: 500; line-height: 1; letter-spacing: -.04em; color: var(--brand); }
+.page .not-found-inner h1 { margin: 0 0 1rem; font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.not-found-text { margin: 0 auto 2rem; max-width: 32rem; color: var(--muted); font-size: 1.0625rem; line-height: 1.6; }
+.not-found-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
